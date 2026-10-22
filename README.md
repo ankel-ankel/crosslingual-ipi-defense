@@ -1,7 +1,5 @@
 # Cross-Lingual Transfer of a Defense Against Indirect Prompt Injection
 
-Code and data for the paper of the same title (under review).
-
 In indirect prompt injection, an attacker hides an instruction inside data that an LLM application
 passes to the model, such as a document or a web page. The defense studied here fine-tunes a small
 LoRA adapter (rank 16) on Qwen2.5-7B-Instruct so that, when the data contain an injected
