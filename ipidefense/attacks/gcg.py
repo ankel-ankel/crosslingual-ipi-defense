@@ -1,8 +1,3 @@
-"""White-box GCG attack on the untrusted input role.
-
-A 20-token suffix after the injected instruction is optimised through the frozen backbone and the
-unmerged LoRA; success is checked by greedy generation on the published decoding path.
-"""
 from __future__ import annotations
 
 import contextlib
