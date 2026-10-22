@@ -1,6 +1,3 @@
-"""Seeded language identification helpers (langdetect + Unicode-script rules)."""
-from __future__ import annotations
-
 import re
 import unicodedata
 

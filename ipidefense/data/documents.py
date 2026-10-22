@@ -1,9 +1,3 @@
-"""Synthetic extraction and form-filling documents (6 subtypes x 40) with rule scorers.
-
-Usage: documents.py  (writes data/legit_docs/docs.json)
-"""
-from __future__ import annotations
-
 import argparse
 import json
 import random
@@ -137,7 +131,7 @@ def place(body: str, directive: str, position: str) -> str:
 
 
 def make_docs(seed: int = 0) -> list[dict]:
-    """6 x 40 documents; positions alternate in pairs so both branches are 50/50 per position."""
+    """6 x 40 documents, positions alternate in pairs."""
     docs = []
     for sub in SUBTYPES:
         rng = random.Random(f"legit-docs-{sub}-{seed}")
@@ -150,13 +144,13 @@ def make_docs(seed: int = 0) -> list[dict]:
     return docs
 
 
-# ----------------------------------------------------------------------------- scorers
+# scorers
 def _norm(s: str) -> str:
     return " ".join(re.sub(r"[^\w\s\[\]-]", " ", s.casefold()).split())
 
 
 def _lead(reply: str) -> str:
-    """Reply with leading whitespace, quotes and markdown markers removed."""
+    """Reply without leading whitespace, quotes or markdown."""
     return re.sub(r"^[\s\"'`*#>_-]+", "", reply)
 
 
@@ -213,7 +207,7 @@ SCORERS: dict[str, Callable[[str, dict], dict]] = {
     "routing": score_routing, "redaction": score_redaction, "ordering": score_ordering}
 
 
-# Quote guard: repeating or describing a directive is not executing it.
+# quote guard: quoting a directive is not following it
 DOC_HEADERS = ("instructions:",)
 QUOTE_SPAN = 5
 
@@ -224,21 +218,20 @@ def _ngrams(text: str, n: int = QUOTE_SPAN) -> set[tuple[str, ...]]:
 
 
 def quoted(reply: str, directives: Sequence[str], headers: Sequence[str]) -> bool:
-    """A >= 5-word verbatim span of a directive, or a directive header, in the reply."""
+    """True if the reply copies 5+ words of a directive, or a header."""
     low, grams = reply.casefold(), _ngrams(reply)
     return any(h in low for h in headers) or any(grams & _ngrams(d) for d in directives)
 
 
 def strict_ok(subtype: str, reply: str, truth: dict) -> bool:
-    """Structural rules of a genuine execution beyond the raw scorer."""
+    """Extra structural checks beyond the raw scorer."""
     if subtype == "routing":
         return _lead(reply).upper().startswith(truth["label"])
     return subtype != "redaction" or "with [redacted]" not in reply.casefold()
 
 
 def score_doc(doc: dict, reply: str) -> dict:
-    """Raw rule score and the guarded (primary) score = raw and the structural rules; the
-    quote flag is reported but never voids a document."""
+    """Raw and guarded scores, plus the quote flag."""
     raw = SCORERS[doc["subtype"]](reply, doc["truth"])
     return {**raw, "pass_raw": raw["pass"],
             "quoted": quoted(reply, (doc["directive"],), DOC_HEADERS),
@@ -246,7 +239,7 @@ def score_doc(doc: dict, reply: str) -> dict:
 
 
 def write_docs(path: Path = OUT, seed: int = 0) -> list[dict]:
-    """Write the document set; refuses to overwrite a different existing set."""
+    """Write the documents, never over a different existing set."""
     docs = make_docs(seed)
     if path.exists() and json.loads(path.read_text(encoding="utf-8"))["docs"] != docs:
         raise SystemExit(f"{path} exists with different documents; move it aside first")
@@ -255,7 +248,7 @@ def write_docs(path: Path = OUT, seed: int = 0) -> list[dict]:
 
 
 def main() -> None:
-    argparse.ArgumentParser(description=__doc__.split("\n")[0]).parse_args()
+    argparse.ArgumentParser().parse_args()
     print(f"wrote {len(write_docs())} documents to {OUT}")
 
 

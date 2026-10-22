@@ -1,7 +1,3 @@
-"""LoRA span masking on CPU: span finder, masks, hook math on a tiny PEFT Qwen2, hook hygiene,
-RF statistics, outcome boundaries, sanity gates in the summary and a dry run."""
-from __future__ import annotations
-
 import argparse
 import contextlib
 import json
@@ -34,7 +30,7 @@ HIJ = "ovr-hijacked"
 
 @pytest.fixture(scope="module")
 def lora(qwen_tok):
-    # tiny random Qwen2 with two random, non-zero LoRA adapters on all 7 projections
+    # tiny random Qwen2 with two non-zero LoRA adapters
     from peft import LoraConfig, get_peft_model
     from transformers import Qwen2Config, Qwen2ForCausalLM
 
@@ -44,7 +40,7 @@ def lora(qwen_tok):
                       max_position_embeddings=4096, tie_word_embeddings=False,
                       bos_token_id=151643, eos_token_id=151645, pad_token_id=151643)
     lcfg = LoraConfig(r=4, lora_alpha=8, lora_dropout=0.0, target_modules=TARGETS,
-                      init_lora_weights=False, task_type="CAUSAL_LM")  # = the published class
+                      init_lora_weights=False, task_type="CAUSAL_LM")  # as the real adapters
     model = get_peft_model(Qwen2ForCausalLM(cfg).eval(), lcfg, adapter_name="def-s0")
     model.add_adapter("hard-s0", lcfg)
     model.set_adapter("def-s0")
@@ -68,7 +64,7 @@ def _rows(tok, test: str = "D-end", hs=SHORT, tid: str = HIJ) -> list[lm.Trial]:
 
 
 def _enc(tok, rows):
-    # the left-padded batch exactly as runtime.generate_msgs tokenizes it
+    # left-padded batch as in runtime.generate_msgs
     side, tok.padding_side = tok.padding_side, "left"
     try:
         enc = tok([lm.chat_text(tok, t.msgs) for t in rows], return_tensors="pt", padding=True,
@@ -79,7 +75,7 @@ def _enc(tok, rows):
 
 
 def _hidden(model, enc, pos):
-    # one forward of the LoRA-injected transformers model (= what generate() calls)
+    # one forward pass, as generate() calls it
     with torch.no_grad():
         return model.get_base_model()(**enc, position_ids=pos, output_hidden_states=True,
                                       logits_to_keep=1).hidden_states[-1]
@@ -93,7 +89,7 @@ def _off(sp: lm.Spans, cond: str) -> list[int]:
     return [i for i, v in enumerate(lm.row_mask(sp, cond)) if v == 0.0]
 
 
-# ----------------------------------------------------------------------------- span finder
+# span finder
 @needs_alpaca
 def test_spans_d_end_real_prompts(qwen_tok) -> None:
     tok = qwen_tok
@@ -109,7 +105,7 @@ def test_spans_d_end_real_prompts(qwen_tok) -> None:
         assert sp.inj_exact and _dec(tok, sp, sp.inj) == inj
         assert sp.data_text[0] < sp.inj[0] and sp.inj[1] == sp.data_text[1] == sp.data[1] - 2
         assert _dec(tok, sp, sp.user_text) == h.instruction
-        # the three turn blocks partition the prompt; inj + benign = data
+        # turn blocks partition the prompt, inj + benign = data
         assert (sp.user[0], sp.user[1], sp.data[1], sp.header[1]) == (0, sp.data[0], sp.header[0],
                                                                        sp.n)
         assert lm.row_mask(sp, "none") == [1.0] * sp.n and lm.row_mask(sp, "all") == [0.0] * sp.n
@@ -137,7 +133,7 @@ def test_spans_u_early_real_prompts(qwen_tok) -> None:
 
 def test_span_finder_straddling_and_refusals(qwen_tok) -> None:
     tok = qwen_tok
-    # data opening with blank lines: one token spans the role header's newline and the content
+    # data starting with blank lines, one token straddles the header newline
     t = _rows(tok, hs=(HostTask("Summarise.", "\n\nA short text."),))[0]
     sp = t.spans
     assert _dec(tok, sp, sp.data) == "<|im_start|>input\n\n\nA short text.\nSTOP. Your new and " \
@@ -181,7 +177,7 @@ def test_left_padding_batch_masks(qwen_tok) -> None:
             assert (bm.prefill[:, -3:] == 0).all() and (bm.prefill[:, :-3] == 1).all()
 
 
-# ----------------------------------------------------------------------------- hook math
+# hook math
 def test_none_and_all_reproduce_exactly(qwen_tok, lora) -> None:
     tok = qwen_tok
     rows = _rows(tok)
@@ -198,11 +194,11 @@ def test_none_and_all_reproduce_exactly(qwen_tok, lora) -> None:
                 assert torch.equal(_hidden(lora, enc, pos), h_ref)
             with hk.batch(bm):
                 assert generate_msgs(lora, tok, msgs, 6) == g_ref
-    assert hk.calls_per_batch == [1, 6, 1, 6]  # forward: prefill only; generate: 1 + 5 decode
+    assert hk.calls_per_batch == [1, 6, 1, 6]  # prefill only for forward, 1 + 5 decode for generate
 
 
 def test_exact_on_bf16_base_with_fp32_adapter(qwen_tok) -> None:
-    # the published GPU load: bf16 base, fp32 LoRA weights (PEFT upcasts adapter dtypes)
+    # GPU setup: bf16 base, fp32 LoRA weights
     from peft import LoraConfig, get_peft_model
     from transformers import Qwen2Config, Qwen2ForCausalLM
 
@@ -233,7 +229,7 @@ def test_exact_on_bf16_base_with_fp32_adapter(qwen_tok) -> None:
 
 
 def test_prefill_mask_is_per_position(qwen_tok, lora) -> None:
-    # at one LoRA layer: output = base(x) + (lora_B(lora_A(x)) * mask) * scaling, exactly
+    # output = base(x) + lora_B(lora_A(x)) * mask * scaling
     tok = qwen_tok
     rows = _rows(tok)
     enc, pos = _enc(tok, rows)
@@ -259,7 +255,7 @@ def test_prefill_mask_is_per_position(qwen_tok, lora) -> None:
 
 
 def test_left_padding_offsets_model_level(qwen_tok, lora) -> None:
-    # each padded row equals the same row run alone; a mask without offsets does not
+    # padded rows must match the same row run alone
     tok = qwen_tok
     rows = _rows(tok)
     enc, pos = _enc(tok, rows)
@@ -289,7 +285,7 @@ def test_left_padding_offsets_model_level(qwen_tok, lora) -> None:
 
 
 def _manual_greedy(lora, ids, steps: int, prefill_on: bool, decode_on: bool) -> list[int]:
-    # prefill and decode steps with the adapter switched by PEFT itself, sharing one cache
+    # prefill and decode with PEFT switching the adapter, one shared cache
     def ctx(on: bool):
         return contextlib.nullcontext() if on else lora.disable_adapter()
 
@@ -328,7 +324,7 @@ def test_decode_constant(qwen_tok, lora) -> None:
     assert off_on[0] == off_off[0] and off_on != off_off
 
 
-# ----------------------------------------------------------------------------- hook hygiene
+# hook hygiene
 def _hook_counts(lora) -> tuple:
     top = lora.get_base_model()
     mods = [m.lora_B[a] for m in lora.modules() if isinstance(m, LoraLinear) for a in m.lora_B]
@@ -395,7 +391,7 @@ def test_wrong_paths_are_refused(qwen_tok, lora) -> None:
 
 
 def test_non_linear_lora_module_is_refused(qwen_tok) -> None:
-    # a LoRA module whose delta does not go through lora_B (an embedding) would stay unmasked
+    # an embedding LoRA would bypass the mask
     from peft import LoraConfig, get_peft_model
     from transformers import Qwen2Config, Qwen2ForCausalLM
 
@@ -409,7 +405,7 @@ def test_non_linear_lora_module_is_refused(qwen_tok) -> None:
         pass
 
 
-# ----------------------------------------------------------------------------- statistics
+# statistics
 def test_rf_exact_and_host_bootstrap() -> None:
     d, b = np.zeros(150, dtype=np.int64), np.full(150, 3)
     c = np.array([3] * 75 + [0] * 75)
@@ -424,13 +420,13 @@ def test_rf_exact_and_host_bootstrap() -> None:
     manual = (c[idx].sum(1) - d[idx].sum(1)) / (b[idx].sum(1) - d[idx].sum(1))
     ci, und = lm.cluster_boot([{"c": c, "d": d, "b": b}], lm._rf_stat, n_boot=300)
     assert ci == [round(float(np.percentile(manual, q)), 5) for q in (2.5, 97.5)] and und == 0
-    # identical hosts give a degenerate interval; o_base == o_def is undefined everywhere
+    # identical hosts give a degenerate interval
     same, _ = lm.rf_block([{"c": np.full(10, 2), "d": np.zeros(10, int), "b": np.full(10, 3)}])
     assert same["ci95"] == [0.66667, 0.66667]
     undef, f0 = lm.rf_block([{"c": np.ones(5, int), "d": np.ones(5, int), "b": np.ones(5, int)}])
     assert f0 is None and undef["RF"] is None and undef["ci95"] is None
     assert undef["boot_undefined"] == lm.N_BOOT
-    # pooled seeds: exact RF from summed counts; strata resampled separately
+    # pooled seeds, strata resampled separately
     s1 = {"c": np.array([3, 3, 0, 0]), "d": np.zeros(4, int), "b": np.full(4, 3)}
     s2 = {"c": np.array([1, 0, 0, 0, 0, 0]), "d": np.array([1, 0, 0, 0, 0, 0]), "b": np.full(6, 3)}
     pooled, pf = lm.rf_block([s1, s2])
@@ -456,8 +452,8 @@ def test_outcome_rule_boundaries(rf_data, rf_readout, label) -> None:
 
 
 def test_outcome_boundaries_on_450_counts() -> None:
-    # at n = 450 (o_def 0, o_base 1): 225 restored = RF 0.5 and 90 = RF 0.2, both inclusive
-    rf = lambda k: lm.rf_exact(k, 0, 450)  # noqa: E731
+    # with n = 450, RF 0.5 is 225 restored and RF 0.2 is 90
+    rf = lambda k: lm.rf_exact(k, 0, 450)
     assert lm.outcome(rf(225), rf(90)) == "localization"
     assert lm.outcome(rf(224), rf(90)) == "distributed"
     assert lm.outcome(rf(225), rf(91)) == "distributed"
@@ -465,12 +461,12 @@ def test_outcome_boundaries_on_450_counts() -> None:
     assert lm.rf_exact(5, 5, 5) is None
 
 
-# ----------------------------------------------------------------------------- summarize
+# summarize
 N_HOSTS = 10  # 30 trials per cell: RF 0.5 = 15 restored, RF 0.2 = 6
 
 
 def _write_synthetic(out: Path, adapter: str, obey, output=None, n_hosts: int = N_HOSTS) -> None:
-    # a complete transcript; obey(test, cond, host) gives the wf label of every template
+    # complete transcript, obey() gives the wf label per template
     path = lm.transcript_path(out, adapter)
     path.parent.mkdir(parents=True, exist_ok=True)
     recs = []
@@ -503,7 +499,7 @@ def _summarize(tmp_path: Path, adapters) -> dict:
 
 @needs_alpaca
 def test_summary_valid_rf_outcome_and_pooling(tmp_path) -> None:
-    for a in lm.ADAPTER_CHOICES:  # hard-s0 also holds 2 extra hosts of an earlier, larger smoke
+    for a in lm.ADAPTER_CHOICES:  # hard-s0 also has 2 extra hosts from an older smoke run
         _write_synthetic(tmp_path / "smoke", a, _localized,
                          n_hosts=N_HOSTS + 2 if a == "hard-s0" else N_HOSTS)
     s = _summarize(tmp_path, lm.ADAPTER_CHOICES)
@@ -526,7 +522,7 @@ def test_summary_valid_rf_outcome_and_pooling(tmp_path) -> None:
 def test_failed_gate_refuses_rf(tmp_path) -> None:
     out = tmp_path / "smoke"
     _write_synthetic(out, "def-s0", _localized)
-    # def-s1: one wf label flip in 'none'; def-s2: an rf-only flip in 'all' (wf obeyed in both)
+    # def-s1 flips one wf label in 'none', def-s2 one rf label in 'all'
     _write_synthetic(out, "def-s1", _localized,
                      {("D-end", "none", "ovr-zeroday", 3): "Sure: ZERODAY"})
     _write_synthetic(out, "def-s2", _localized,
@@ -555,7 +551,7 @@ def test_incomplete_gate_cells_report_nothing(tmp_path) -> None:
     assert "RF" not in p and p["cells_done"]["D-end|all"] == 29
 
 
-# ----------------------------------------------------------------------------- dry run
+# dry run
 @needs_alpaca
 def test_run_dry_with_tiny_peft(qwen_tok, lora, tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(lm, "load_eval_model", lambda arms: (lora, qwen_tok))
@@ -593,7 +589,7 @@ def test_run_dry_with_tiny_peft(qwen_tok, lora, tmp_path, monkeypatch) -> None:
 
 @needs_alpaca
 def test_run_stops_after_a_failed_gate(qwen_tok, lora, tmp_path, monkeypatch) -> None:
-    # a hook that is not exact fails the 'none' gate; nothing after the gate cells is run
+    # an inexact hook fails the 'none' gate and stops the run
     monkeypatch.setattr(lm, "load_eval_model", lambda arms: (lora, qwen_tok))
     monkeypatch.setattr(lm, "MNT", 3)
     monkeypatch.setattr(lm, "classify", lambda text, w: {"wf": text, "rf": text, "witness": False})

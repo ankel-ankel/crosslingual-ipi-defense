@@ -1,9 +1,3 @@
-"""Benign data channel: ROUGE-L of defended vs undefended answers, clean refusals, length ratio.
-
-benign.py --lora-dir models/defense-qwen-seed0 --seed 0
-"""
-from __future__ import annotations
-
 import argparse
 import json
 
@@ -39,7 +33,7 @@ def main() -> None:
             ref = generate(model, tok, h.instruction, data=h.data, max_new_tokens=mnt)
         hyp = generate(model, tok, h.instruction, data=h.data, max_new_tokens=mnt)
         rl = rouge_l_f1(ref, hyp)
-        # a refusal cue in the defended answer (the witness argument is a placeholder)
+        # the witness argument is only a placeholder
         is_refusal = clf.classify(hyp, "PWNED") == "refused"
         rouges.append(rl)
         len_ratios.append(round(len(hyp.split()) / max(1, len(ref.split())), 3))

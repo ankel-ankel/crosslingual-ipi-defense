@@ -1,6 +1,3 @@
-"""NLLB-200 (distilled 600M) translator with an in-memory cache; greedy decoding."""
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from functools import lru_cache
 

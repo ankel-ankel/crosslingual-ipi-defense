@@ -1,6 +1,3 @@
-"""Injection templates: training, hardening (prefix) and held-out sets, training witnesses."""
-from __future__ import annotations
-
 from ipidefense.attacks.witnesses import WitnessInjection
 
 TRAIN_TEMPLATES = (

@@ -1,6 +1,3 @@
-"""Base-model and adapter loaders, input-role chat formatting and greedy generation."""
-from __future__ import annotations
-
 import torch
 from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -14,7 +11,7 @@ QWEN_DIR = MODELS / "Qwen2.5-7B-Instruct"
 SEALION_DIR = MODELS / "Llama-SEA-LION-v3-8B-IT"
 MISTRAL_DIR = MODELS / "Mistral-7B-Instruct-v0.3"
 
-# ChatML without a default system prompt; any role name is rendered, including "input"
+# ChatML without a default system prompt, renders any role incl. "input"
 QWEN_INPUT_TEMPLATE = (
     "{% for message in messages %}"
     "{{ '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>\n' }}"
@@ -29,7 +26,7 @@ def _load_base() -> torch.nn.Module:
     )
 
 
-# Llama-based models use the tokenizer and chat template shipped with Meta-SecAlign-8B
+# Llama models use the Meta-SecAlign-8B tokenizer and template
 def llama_tokenizer() -> PreTrainedTokenizerBase:
     return AutoTokenizer.from_pretrained(str(ADAPTER_DIR))
 
@@ -184,7 +181,7 @@ def generate_batch(
     max_new_tokens: int = 64,
     inline: bool = False,
 ) -> list[str]:
-    # left padding, so every prompt ends right before the generated tokens
+    # left padding so prompts end right before the new tokens
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
     side = tok.padding_side

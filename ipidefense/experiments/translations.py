@@ -1,9 +1,3 @@
-"""Whole-sentence translations of the suite templates (renderer llm): export and import.
-
-Usage: translations.py export [--langs ...] | import FILE... [--allow-partial]
-"""
-from __future__ import annotations
-
 import argparse
 import json
 import sys
@@ -38,7 +32,7 @@ def export(langs: Sequence[str]) -> list[dict]:
 
 
 def integrity(english: str, witness: str, rendered: str) -> list[str]:
-    """Problems that make a rendering unusable before any review (empty = OK)."""
+    """Problems that make a rendering unusable, empty if OK."""
     bad = []
     if not rendered.strip() or rendered.strip() == english.strip():
         bad.append("empty_or_untranslated")
@@ -78,8 +72,7 @@ def import_files(paths: Sequence[str], allow_partial: bool = False) -> dict:
             old = cache["records"].get(tid)
             if old and old["rendered"] != text and old.get("review"):
                 raise SystemExit(f"{lang}/{tid}: refusing to replace a reviewed rendering")
-            # integrity failures are stored with their problems (never reviewed, never QA-ok),
-            # so a run can proceed without them; a later import may replace them
+            # failed renderings are stored but never QA-ok, a later import may replace them
             cache["records"][tid] = {
                 "tid": tid, "family": t.family, "template": t.template, "witness": t.witness,
                 "english": t.english(), "rendered": text, "sha1": sha(text), "method": METHOD,
@@ -96,7 +89,7 @@ def import_files(paths: Sequence[str], allow_partial: bool = False) -> dict:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("export", "import"))
     ap.add_argument("files", nargs="*", help="import: translation files")
     ap.add_argument("--langs", nargs="+", default=list(LANGS))

@@ -1,9 +1,3 @@
-"""LaTeX rows of the machine-translated human-attack table (prints rows and a JSON digest).
-
-Usage: human_mt_table.py
-"""
-from __future__ import annotations
-
 import argparse
 import json
 
@@ -42,8 +36,7 @@ def cell(summary: dict, fam: str, lang: str) -> dict:
     return out
 
 
-# Per language: undefended QA-ok obey; for def (seeds 0-2) and hard (seeds 0-1): obeyed/trials,
-# CP95 upper bound, highest per-template rate and the two focus templates.
+# one row per language: undef obey, then def and hard stats
 def row(summary: dict, lang: str) -> tuple[str, dict]:
     u, d, h = (cell(summary, f, lang) for f in ("undef", "def", "hard"))
     tex = " & ".join([
@@ -57,7 +50,7 @@ def row(summary: dict, lang: str) -> tuple[str, dict]:
 
 
 def main() -> None:
-    argparse.ArgumentParser(description=__doc__).parse_args()
+    argparse.ArgumentParser().parse_args()
     mt = json.loads(MT.read_text(encoding="utf-8"))
     langs = [lang for lang in LANGS if f"def|{lang}|human" in mt["decision"]["claims"]]
     digest = {"langs": langs, "lands": mt["decision"]["lands"],

@@ -1,8 +1,3 @@
-"""CPU tests of the training-set helpers that the backbone configurations use: training hosts, the
-defense's data mix, generation records, length checks, adapter folders and the loss log (tiny
-random Qwen2, Qwen tokenizer only)."""
-from __future__ import annotations
-
 import math
 from pathlib import Path
 
@@ -23,7 +18,7 @@ needs_alpaca = pytest.mark.skipif(not (paths.DATA / "alpaca_cleaned.json").exist
 
 
 class FakeTranslator:
-    """Deterministic stand-in for NLLB: tags the stripped segment with the language."""
+    """NLLB stand-in that tags the segment with the language."""
 
     def translate(self, text: str, target_lang: str) -> str:
         text = text.strip()
@@ -41,7 +36,7 @@ def fake_tr() -> FakeTranslator:
 
 
 def tiny_lora_model(vocab: int, dropout: float = 0.0):
-    """A 2-layer random Qwen2 wrapped with our LoRA config (B = 0 at init), fp32 on CPU."""
+    """2-layer random Qwen2 with our LoRA config, fp32 on CPU."""
     from peft import LoraConfig, get_peft_model
     from transformers import Qwen2Config, Qwen2ForCausalLM
 
@@ -59,7 +54,7 @@ def tiny_lora_model(vocab: int, dropout: float = 0.0):
     return model
 
 
-# ----------------------------------------------------------------------------- hosts
+# hosts
 @needs_alpaca
 @pytest.mark.parametrize("seed", [0, 1, 2])
 def test_ref_hosts_match_load_en_hosts(seed: int) -> None:
@@ -70,7 +65,7 @@ def test_ref_hosts_match_load_en_hosts(seed: int) -> None:
     assert rcp.train_hosts(seed) == ref[:1500]
 
 
-# ----------------------------------------------------------------------------- data mix
+# data mix
 @needs_alpaca
 @pytest.mark.parametrize(("seed", "n_clean"), [(0, 902), (1, 909), (2, 882)])
 def test_a0_clean_counts(seed: int, n_clean: int, fake_tr: FakeTranslator) -> None:
@@ -84,7 +79,7 @@ def test_a0_clean_counts(seed: int, n_clean: int, fake_tr: FakeTranslator) -> No
             assert p["data"] == f"{hs[p['host']].data}\n{p['injection']}"
 
 
-# ----------------------------------------------------------------------------- generation
+# generation
 @needs_alpaca
 def test_generation_matches_model_generate(tok) -> None:
     model = tiny_lora_model(len(tok))
@@ -105,7 +100,7 @@ def test_generation_matches_model_generate(tok) -> None:
     assert (rec["n_tokens"], rec["ended_eos"], rec["cap_hit"]) == (3, False, True)
 
 
-# ----------------------------------------------------------------------------- guards
+# guards
 def test_adapter_dir_guards(tmp_path: Path) -> None:
     for bad in ("../evil", "a/b", ""):
         with pytest.raises(ValueError):

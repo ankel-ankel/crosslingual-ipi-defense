@@ -1,6 +1,3 @@
-"""Obey rate of rendered injections on host tasks, per language, with bootstrap intervals."""
-from __future__ import annotations
-
 import numpy as np
 import torch
 
@@ -22,7 +19,6 @@ def outcomes(
     model, tok, clf: OutcomeClassifier, hosts, inj_text: str, witness: str, mnt: int,
     inline: bool = False, batch: int = 1,
 ) -> list[str]:
-    # the injection is appended to the end of the host data
     items = [(h.instruction, f"{h.data}\n{inj_text}") for h in hosts]
     if batch <= 1:
         outs = [

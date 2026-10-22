@@ -1,8 +1,3 @@
-"""Assemble pool_<lang>.jsonl from the HackAPrompt / Tensor Trust candidate tables.
-
-Usage: python scripts/build_data/human_attacks/assemble.py CAND_DIR OUT_DIR
-       PROMPTINJECT_PROMPT_DATA_PY
-"""
 import hashlib
 import json
 import sys
@@ -80,8 +75,7 @@ def validate(rec: dict) -> None:
 
 
 def dedup(df: pd.DataFrame) -> tuple[pd.DataFrame, object]:
-    """Exact (normalised) then greedy near-duplicate removal; the kept rows and their TF-IDF
-    matrix."""
+    """Drop exact and near duplicates, return kept rows and their TF-IDF matrix."""
     df = df.assign(key=df.adapted.map(norm_key)).sort_values(
         ["src", "players", "source_row_id"], ascending=[True, False, True], kind="stable")
     df = df.drop_duplicates("key").reset_index(drop=True)
@@ -100,8 +94,7 @@ def dedup(df: pd.DataFrame) -> tuple[pd.DataFrame, object]:
 
 
 def select_en(df: pd.DataFrame, X) -> list[int]:
-    """Stratified pick: per source quota, round-robin over strata x length tercile, one text per
-    player."""
+    """Stratified pick per source quota, one text per player."""
     chosen: list[int] = []
     for src, quota in QUOTA.items():
         idx = [i for i in range(len(df)) if df.src[i] == src]
@@ -110,7 +103,7 @@ def select_en(df: pd.DataFrame, X) -> list[int]:
         buckets = defaultdict(list)
         for i in idx:
             buckets[(df.stratum[i], terc[i])].append(i)
-        prio = lambda i: hashlib.sha1(  # noqa: E731
+        prio = lambda i: hashlib.sha1(
             f"{SEED}:{df.src[i]}:{df.source_row_id[i]}".encode()).hexdigest()
         for b in buckets.values():
             b.sort(key=prio, reverse=True)  # pop() takes the smallest hash first
@@ -167,7 +160,6 @@ def main() -> None:
                      for r in d.itertuples()]
         print(f"{lg}: adjudicated {len(sub)} -> after dedup {len(d)} "
               f"({d.groupby('src').size().to_dict()})")
-    # write
     for lg, recs in sorted(pools.items()):
         for rec in recs:
             validate(rec)

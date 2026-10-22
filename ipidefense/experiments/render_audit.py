@@ -1,9 +1,3 @@
-"""Original vs corrected NLLB rendering of every template pool -> RUNS/render_audit.json.
-
-Usage: render_audit.py
-"""
-from __future__ import annotations
-
 import argparse
 import json
 
@@ -29,7 +23,7 @@ def inventory() -> dict[str, tuple[WitnessInjection, ...]]:
 
 
 def transcript_echo_counts(tails: dict[str, str]) -> dict[str, dict[str, int]]:
-    """Count undefended control outputs (seed 0 and 1) that contain each language's old tail."""
+    """Count undefended control outputs that contain each language's old tail."""
     counts: dict[str, dict[str, int]] = {}
     for seed in (0, 1):
         path = RUNS / f"certify_transcripts_headline_seed{seed}.jsonl"
@@ -45,7 +39,7 @@ def transcript_echo_counts(tails: dict[str, str]) -> dict[str, dict[str, int]]:
 
 
 def main() -> None:
-    argparse.ArgumentParser(description=__doc__).parse_args()
+    argparse.ArgumentParser().parse_args()
     tr = NLLBTranslator()
     rows = []
     for pool, injs in inventory().items():
@@ -61,7 +55,7 @@ def main() -> None:
                     "suffix_translatable": is_translatable(suf),
                     "suffix_raw": suf, "witness_once_new": new.count(inj.witness) == 1,
                 })
-    # the old tail of the first control wrapper in each language, as rendered now
+    # old tail of the first control wrapper per language
     cert0 = [r for r in rows if r["pool"] == "cert" and r["witness"] == "XYZZY"]
     tails = {r["lang"]: r["old"].split("XYZZY", 1)[1].strip() for r in cert0}
     report = {

@@ -1,9 +1,3 @@
-"""Rendering review: worklists, merged verdicts of two reviewers and the agreement report.
-
-Usage: review.py list|supplement|check|apply|report [--renderer v2|llm]
-"""
-from __future__ import annotations
-
 import argparse
 import json
 import os
@@ -16,7 +10,7 @@ from pathlib import Path
 from ipidefense.experiments.suite import qa_language
 from ipidefense.paths import DATA
 
-NEW = ("ko", "ar", "th", "bn", "my", "km")  # default: the languages added to the suite
+NEW = ("ko", "ar", "th", "bn", "my", "km")  # languages added to the suite
 LANGS = NEW
 REN = DATA / "renderings"
 WORK = REN / "review_worklist.json"
@@ -30,7 +24,7 @@ def _path(lang: str, renderer: str = "v2") -> Path:
 
 
 def _cache(lang: str, renderer: str = "v2") -> tuple[dict, dict]:
-    """The cached renderings of one language, QA recomputed in place (review kept)."""
+    """Cached renderings of one language with QA recomputed."""
     path = _path(lang, renderer)
     data = json.loads(path.read_text(encoding="utf-8"))
     recs = data.get("records", data)
@@ -50,8 +44,7 @@ def refuse_overwrite(path: Path, force: bool) -> None:
 
 
 def _attack_recs(recs: dict) -> dict:
-    """Records under review: attacks and copy controls, without the trainpool renderings (used
-    for the human-pool check only) and llm renderings that failed integrity (never QA-ok)."""
+    """Attack and copy-control records that need review."""
     return {k: r for k, r in recs.items() if isinstance(r, dict)
             and r.get("family") != "trainpool" and not r.get("integrity")}
 
@@ -70,7 +63,7 @@ def _flagged(recs: dict) -> set[str]:
 
 def build_list(langs: Sequence[str] | None = None, out: Path | None = None,
                renderer: str = "v2", review_all: bool = False, force: bool = False) -> None:
-    """Flagged + fixed-seed 25% of the rest, or every rendering with review_all (llm)."""
+    """Flagged items plus a fixed-seed 25% of the rest, or all with review_all."""
     out = out or WORK
     refuse_overwrite(out, force)
     items = []
@@ -88,8 +81,7 @@ def build_list(langs: Sequence[str] | None = None, out: Path | None = None,
 
 def build_supplement(langs: Sequence[str] | None = None, first_path: Path | None = None,
                      out: Path | None = None, force: bool = False) -> None:
-    """Unreviewed items that the current QA flags, plus a fixed-seed top-up of the random sample;
-    first-list items reviewed only because of stale flags do not count as random draws."""
+    """Newly flagged unreviewed items plus a top-up of the random sample."""
     out = out or SUPP
     refuse_overwrite(out, force)
     first = json.loads((first_path or WORK).read_text(encoding="utf-8"))
@@ -114,8 +106,7 @@ def build_supplement(langs: Sequence[str] | None = None, first_path: Path | None
 
 
 def check(langs: Sequence[str] | None = None, renderer: str = "v2") -> int:
-    """Count renderings that need a verdict but have none (must be 0 before a gate): the
-    hard-flagged ones, or every attack/control rendering for llm (100% review)."""
+    """Count renderings that still need a verdict."""
     missing = {}
     for lang in langs or LANGS:
         recs = _cache(lang, renderer)[1]
@@ -129,7 +120,7 @@ def check(langs: Sequence[str] | None = None, renderer: str = "v2") -> int:
 
 
 def load_votes(paths: Sequence[str], worklist: Path) -> tuple[list[dict], list[dict]]:
-    """Validated reviewer files: exactly two, each covering exactly the worklist's keys."""
+    """Load and validate the two reviewer files."""
     if len(paths) != 2:
         raise SystemExit(f"need exactly two reviewer files, got {len(paths)}")
     if Path(paths[0]).resolve() == Path(paths[1]).resolve():
@@ -217,7 +208,7 @@ def report(paths: Sequence[str], worklist: Path) -> dict:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("list", "supplement", "check", "apply", "report"))
     ap.add_argument("files", nargs="*", help="apply/report: the two reviewer verdict files")
     ap.add_argument("--langs", nargs="+")

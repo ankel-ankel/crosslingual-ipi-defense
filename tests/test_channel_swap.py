@@ -1,6 +1,3 @@
-"""Channel swap on CPU: placements, minimal pairs, cells, the summary rules and hidden states."""
-from __future__ import annotations
-
 import argparse
 import json
 

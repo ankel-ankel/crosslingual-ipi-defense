@@ -1,9 +1,3 @@
-"""Held-out injections in six languages (three unseen in training), undefended vs defended.
-
-transfer.py --lora-dir models/defense-qwen-seed0 --seed 0
-"""
-from __future__ import annotations
-
 import argparse
 import json
 

@@ -13,17 +13,17 @@ from ipidefense.attacks.witnesses import WitnessInjection
 from ipidefense.metrics.scoring import classify
 from ipidefense.model import build_messages, generate
 
-# Every embedding row at or above this id is a Qwen2.5 special token or a pad row.
+# Qwen2.5 special tokens and pad rows start at this id
 QWEN_SPECIAL_FLOOR = 151643
-# Token id of " !": 20 of them give the space-separated "! ! ... !" initialisation.
+# token id of " !", used for the initial suffix
 INIT_TOKEN_ID = 753
-# Marks the suffix slot when the rendered prompt is split into prefix and post.
+# marks the suffix slot in the rendered prompt
 _SENTINEL = "\u0000\u0000GCGSUFFIX\u0000\u0000"
 
 ArmCtx = Callable[[], contextlib.AbstractContextManager]
 
 
-# Defaults follow the GCG protocol of Meta-SecAlign, SecAlign and StruQ.
+# defaults follow the SecAlign / StruQ GCG setup
 @dataclass(frozen=True)
 class GCGConfig:
     steps: int = 500
@@ -36,20 +36,20 @@ class GCGConfig:
     max_new_tokens: int = 64  # greedy generation at each check
     seed: int = 0
     init_token_id: int = INIT_TOKEN_ID
-    use_cache: bool = True  # prefix-KV reuse; False = full-sequence forward
+    use_cache: bool = True  # False = full forward, no prefix cache
     early_stop: bool = True
     allow_non_ascii: bool = False
-    universal_add_every: int = 50  # stored with the config, not read by the loops
+    universal_add_every: int = 50  # not read by the loops
 
     def as_dict(self) -> dict[str, object]:
         return asdict(self)
 
 
-# ----------------------------------------------------------------------------- tokens and spans
+# tokens and spans
 def build_disallowed_ids(
     tok: PreTrainedTokenizerBase, embed_rows: int, allow_non_ascii: bool = False
 ) -> Tensor:
-    # specials and pad rows, plus every lower id that decodes to non-ASCII or non-printable text
+    # specials, pad rows and non-ASCII or non-printable tokens
     blocked = set(range(QWEN_SPECIAL_FLOOR, embed_rows))
     if not allow_non_ascii:
         for tid in range(QWEN_SPECIAL_FLOOR):
@@ -61,7 +61,7 @@ def build_disallowed_ids(
 
 @dataclass(frozen=True)
 class PromptSpans:
-    """Fixed token spans around the optimised suffix for one (host, injection)."""
+    """Token spans around the suffix for one host and injection."""
 
     before_ids: tuple[int, ...]
     after_ids: tuple[int, ...]
@@ -78,8 +78,7 @@ def render_spans(
     data: str,
     injection: WitnessInjection,
 ) -> PromptSpans:
-    # render with a sentinel in the suffix slot and split on it (the template is never rebuilt);
-    # the target is the witness itself, without a leading space
+    # split the rendered prompt at the sentinel
     inj_text = injection.render()
     data_full = f"{data}\n{inj_text}{_SENTINEL}"
     rendered = tok.apply_chat_template(
@@ -100,8 +99,7 @@ def render_spans(
 def filter_candidates(
     tok: PreTrainedTokenizerBase, cand: Tensor, spans: PromptSpans
 ) -> Tensor | None:
-    # keep a candidate only if the full prompt re-tokenises to before + suffix + after
-    # (no merge at either boundary), so the loss and the greedy check see the same ids
+    # keep candidates that re-tokenise to the same ids
     before, after = list(spans.before_ids), list(spans.after_ids)
     kept: list[Tensor] = []
     for row in cand:
@@ -115,7 +113,7 @@ def filter_candidates(
     return torch.stack(kept)
 
 
-# Ported from nanoGCG 0.3.0 (Gray Swan AI, MIT License; see THIRD_PARTY.md).
+# ported from nanoGCG 0.3.0 by Gray Swan AI (MIT, see THIRD_PARTY.md)
 def sample_ids_from_grad(
     ids: Tensor,
     grad: Tensor,
@@ -153,8 +151,7 @@ def sample_valid_candidates(
     disallowed: Tensor,
     max_rounds: int = 16,
 ) -> tuple[Tensor, int, int]:
-    # oversample until search_width distinct candidates pass the filter; returns (candidates,
-    # n_valid, rounds) and falls back to the current suffix if nothing survives max_rounds
+    # oversample until search_width candidates pass, else keep the current suffix
     collected: list[Tensor] = []
     seen: set[tuple[int, ...]] = set()
     rounds = 0
@@ -177,10 +174,9 @@ def sample_valid_candidates(
     return stacked, stacked.shape[0], rounds
 
 
-# ----------------------------------------------------------------------------- forward passes
+# forward passes
 def _ce_from_kept(logits: Tensor, target: Tensor) -> Tensor:
-    # per-row mean target CE from the kept logits [B, T+1, V], in fp32 (bf16 CE at a 152k
-    # vocabulary differs by up to ~0.09 nats and would blur the candidate ranking)
+    # mean target CE per row, in fp32 since bf16 is too coarse here
     pred = logits[:, :-1, :].float()
     b, t, v = pred.shape
     ce = F.cross_entropy(pred.reshape(b * t, v), target.reshape(b * t), reduction="none")
@@ -195,7 +191,7 @@ def token_gradient(
     arm_ctx: ArmCtx,
     device: torch.device,
 ) -> Tensor:
-    # gradient of the mean target CE w.r.t. the one-hot suffix, shape [n, V]
+    # gradient w.r.t. the one-hot suffix, shape [n, V]
     vocab = embed_w.shape[0]
     target = torch.tensor(spans.target_ids, device=device)
     onehot = torch.zeros(len(optim_ids), vocab, device=device, dtype=embed_w.dtype)
@@ -212,8 +208,7 @@ def token_gradient(
             inputs_embeds=seq, attention_mask=attn, use_cache=False, logits_to_keep=len(target) + 1
         )
         loss = _ce_from_kept(out.logits, target).mean()
-        # autograd.grad, not backward(): PEFT re-enables LoRA requires_grad on leaving
-        # disable_adapter(), and backward() would accumulate grads into the adapter
+        # autograd.grad so that no grads land on the LoRA weights
         (grad,) = torch.autograd.grad(loss, [onehot])
     return grad.detach().clone()
 
@@ -222,7 +217,7 @@ def token_gradient(
 def compute_prefix_kv(
     model: torch.nn.Module, before_ids: Sequence[int], arm_ctx: ArmCtx, device: torch.device
 ) -> list[tuple[Tensor, Tensor]]:
-    # per-layer (keys, values) of the fixed prefix, computed once per host
+    # KV cache of the fixed prefix, once per host
     before = torch.tensor(before_ids, device=device).unsqueeze(0)
     attn = torch.ones_like(before)
     with arm_ctx():
@@ -231,7 +226,7 @@ def compute_prefix_kv(
 
 
 def _batch_cache(prefix_kv: list[tuple[Tensor, Tensor]], batch: int) -> DynamicCache:
-    # a fresh cache per mini-batch: DynamicCache.update extends the stored tensors in place
+    # fresh cache per mini-batch, DynamicCache.update works in place
     data = [
         (k.expand(batch, -1, -1, -1), v.expand(batch, -1, -1, -1)) for k, v in prefix_kv
     ]
@@ -248,7 +243,7 @@ def candidate_loss(
     arm_ctx: ArmCtx,
     device: torch.device,
 ) -> Tensor:
-    # mean target CE of every candidate suffix, shape [C]
+    # mean target CE per candidate, shape [C]
     n_cand = cand.shape[0]
     target = torch.tensor(spans.target_ids, device=device)
     after = torch.tensor(spans.after_ids, device=device)
@@ -292,8 +287,7 @@ def run_check(
     cfg: GCGConfig,
     rep_penalty: float | None = None,
 ) -> tuple[dict[str, object], str]:
-    # greedy generation on the published path, scored by classify; rep_penalty overrides
-    # generation_config.repetition_penalty for this call only (1.0 = sensitivity re-check)
+    # rep_penalty overrides repetition_penalty for this call only
     planted = f"{data}\n{spans.inj_text}{suffix_str}"
     gen_cfg = model.generation_config
     original = gen_cfg.repetition_penalty
@@ -310,15 +304,13 @@ def run_check(
 
 
 def check_steps(cfg: GCGConfig) -> set[int]:
-    # step 1, then every check_every steps
     steps = {1}
     steps.update(range(cfg.check_every, cfg.steps + 1, cfg.check_every))
     return steps
 
 
-# ----------------------------------------------------------------------------- attack loops
+# attack loops
 def freeze_model(model: torch.nn.Module) -> None:
-    # the attack optimises token ids, never weights
     for param in model.parameters():
         param.requires_grad_(False)
     model.eval()
@@ -337,8 +329,7 @@ def attack_host(
     host_index: int,
     on_event: Callable[[dict], None] | None = None,
 ) -> dict[str, object]:
-    # stops at the first check that begins with the witness; a check that misses witness-first
-    # at repetition penalty 1.05 is repeated at 1.0 (sensitivity only)
+    # stop at the first witness-first check, misses are re-checked at penalty 1.0
     device = embed_w.device
     torch.manual_seed(cfg.seed + host_index)
     spans = render_spans(tok, host_instruction, host_data, injection)
@@ -431,8 +422,7 @@ def attack_universal(
     arm_ctx: ArmCtx,
     on_event: Callable[[dict], None] | None = None,
 ) -> dict[str, object]:
-    # one suffix over several hosts (summed loss, Zou et al. 2023): the next host joins once the
-    # suffix passes the check on every active host; no early stop
+    # one suffix for several hosts (Zou et al. 2023), hosts join one at a time
     device = embed_w.device
     torch.manual_seed(cfg.seed)
     spans = [render_spans(tok, instr, data, injections[i % len(injections)])

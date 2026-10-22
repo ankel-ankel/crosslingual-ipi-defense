@@ -1,7 +1,3 @@
-"""Security (dumbbell), mechanism (dumbbell) and adaptive (lollipop) figures from the published
-values, which are written below; one vector PDF and one 300-dpi PNG per figure, written to
-runs/figures (or --out).
-"""
 import argparse
 import os
 import sys
@@ -11,14 +7,14 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-from matplotlib import font_manager as fm  # noqa: E402
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import font_manager as fm
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # runs without installing
 
-from ipidefense.paths import RUNS  # noqa: E402
-from ipidefense.runner import Run, Step, main, shown, user_path  # noqa: E402
+from ipidefense.paths import RUNS
+from ipidefense.runner import Run, Step, main, shown, user_path
 
 OUT = str(RUNS / "figures")
 
@@ -63,9 +59,9 @@ def save(fig, stem):
 
 
 def fig_security():
-    # dumbbell (a near-zero value stays visible as a marker); trained | unseen languages
+    # dumbbell plot, trained vs unseen languages
     langs = ["en", "es", "vi", "fr", "de", "zh"]
-    # non-English undefended values: corrected renderer (main security table)
+    # undefended values with the corrected renderer
     undef = [0.963, 0.519, 0.783, 0.733, 0.724, 0.659]
     defd = [0.001, 0.001, 0.000, 0.001, 0.001, 0.000]
     x = np.array([0, 1, 2, 3.7, 4.7, 5.7])  # gap between the two groups
@@ -99,7 +95,7 @@ def fig_security():
 
 
 def fig_mechanism():
-    # dumbbell by channel: undefended (red) vs defended (teal) compliance push
+    # dumbbell by channel, undefended vs defended
     x = np.array([0.0, 1.0])
     base = [44.96, 30.35]        # data channel, user channel
     defended = [-0.05, 1.61]
@@ -129,7 +125,7 @@ def fig_mechanism():
 
 
 def fig_adaptive():
-    # lollipop: the hardened values (0.010 / 0.040) stay visible as markers
+    # lollipop so near-zero values stay visible
     labels = ["initial defense\n(seed 0)", "hardened\n(seed 0)", "hardened\n(seed 1)"]
     asr = [0.890, 0.010, 0.040]
     colors = [RED, TEAL, TEAL]
@@ -181,4 +177,4 @@ STEPS = [
 
 
 if __name__ == "__main__":
-    main(__file__, __doc__, STEPS, options)
+    main(__file__, STEPS, options)

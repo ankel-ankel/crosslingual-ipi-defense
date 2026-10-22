@@ -1,7 +1,3 @@
-"""HackAPrompt: successful 'I have been PWNED' submissions -> adapted {witness} candidates.
-
-Usage: python scripts/build_data/human_attacks/hackaprompt.py HACKAPROMPT_PARQUET OUT_PARQUET
-"""
 import re
 import sys
 from collections import Counter

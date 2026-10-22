@@ -1,10 +1,3 @@
-"""IFEval deltas (defended - undefended) by instruction subset and type, with a prompt bootstrap
-and length diagnostics, from logged IFEval transcripts. CPU only.
-
-Usage: ifeval_breakdown.py [--dir DIR] [--undef ARM] [--arms ARM ...]
-"""
-from __future__ import annotations
-
 import argparse
 import json
 import statistics
@@ -22,7 +15,7 @@ LABELS = DATA / "ifeval_subsets.json"
 N_PROMPTS = 541
 EOS_BAND = (140, 180)
 MID_SENTENCE_END = set(",;:-")
-N_LONG = 15  # 'number_words at least >= 400' instructions, dropped in the sensitivity analysis
+N_LONG = 15  # long-answer instructions, dropped in the sensitivity run
 
 
 def load_arm(path: Path) -> dict[int, dict]:
@@ -42,7 +35,7 @@ def mid_sentence(resp: str) -> bool:
 
 
 def long_mask(labels: list[dict], rows: list[dict] | None) -> list[list[bool]]:
-    """True for the 'number_words at least >= 400' instructions (needs the prompt kwargs)."""
+    """True for the 'number_words at least 400' instructions."""
     if rows is None:
         from ipidefense.evaluation.ifeval import load_prompts
 
@@ -83,13 +76,12 @@ def _deltas(rows: list[tuple], groups: Sequence[str], key: int) -> dict[str, flo
 
 def bootstrap(rows: list[tuple], groups: Sequence[str], key: int, n_boot: int,
               seed: int = 0) -> dict[str, dict]:
-    """Point estimate and percentile 95% CI over prompts for each group's mean delta, plus
-    Delta_CS - Delta_OTHER and Delta_IL - Delta_OTHER when those groups exist."""
+    """Mean delta per group with percentile 95% CIs over prompts."""
     by_prompt: dict[int, list[tuple]] = defaultdict(list)
     for r in rows:
         by_prompt[r[0]].append(r)
     prompts = sorted(by_prompt)
-    # per prompt and group: (sum of deltas, count) -> fast resampling
+    # per-prompt sums and counts for fast resampling
     g_idx = {g: k for k, g in enumerate(groups)}
     sums = np.zeros((len(prompts), len(groups)))
     cnts = np.zeros((len(prompts), len(groups)))
@@ -143,14 +135,12 @@ def _times(d: float, u: float) -> bool:
 
 
 def hypotheses(sub: dict, diag: dict) -> dict:
-    """H1 (early stopping): the CS drop exceeds the OTHER drop by >= 5 pp and a length signature
-    is present; H2 (spill-over): the IL drop exceeds the OTHER drop by >= 5 pp."""
+    """Check H1 (early stopping) and H2 (spill-over)."""
     def supported(key: str) -> bool:
         ci = sub[key]["ci95"]
         return bool(sub[key]["delta"] <= -0.05 and ci is not None and ci[1] < 0)
 
-    # Deltas are signed (negative = drop): the CS drop exceeds the OTHER drop by >= 5 pp iff
-    # (Delta_CS - Delta_OTHER) <= -0.05 with the CI upper bound < 0.
+    # deltas are signed, negative means a drop
     u, d = diag["undefended"], diag["defended"]
     sig = {"median_cs_ratio_le_0.85": (diag["median_cs_length_ratio"] or 1.0) <= 0.85,
            "eos_140_180_2x": _times(d["eos_140_180"], u["eos_140_180"]),
@@ -177,7 +167,7 @@ def analyze(undef: dict[int, dict], arms: Sequence[dict[int, dict]], labels: lis
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("--dir", type=Path, default=RUNS / "ifeval_logged")
     ap.add_argument("--undef", default="undef")
     ap.add_argument("--arms", nargs="+", default=["def-s0", "def-s1", "def-s2"])

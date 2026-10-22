@@ -1,8 +1,3 @@
-"""Translated wrappers of the non-witness experiment: import with integrity checks, a two-checker
-review with planted defects, and the rendering gate (command line: experiments/nonwitness.py).
-"""
-from __future__ import annotations
-
 import json
 import random
 import unicodedata
@@ -19,8 +14,7 @@ from ipidefense.paths import DATA
 from ipidefense.rendering.literal import MARKUP
 from ipidefense.utils import sha
 
-# A language is renderable only if its 5 wrappers pass integrity and both checkers (pass iff both
-# pass) and the text is the imported and reviewed one. 'JSON', 'P.S.' and {decoy} stay verbatim.
+# a language is renderable once all its wrappers pass integrity and review
 LANGS = ("en", "es", "vi", "fr", "de", "zh", "ko", "bn")
 NAMES = {"es": "Spanish", "vi": "Vietnamese", "fr": "French", "de": "German",
          "zh": "Chinese (Simplified)", "ko": "Korean", "bn": "Bengali"}
@@ -30,13 +24,13 @@ PROTECTED = ("JSON", "P.S.", DECOY)
 WRAPPERS: dict[str, str] = {**{f"fmt-{name}": text for name, text, _ in FORMAT_ATTACKS},
                             "ans-sub": note(DECOY)}
 METHOD = "llm:claude-agent (whole-sentence translation)"
-MAX_IMPORTS = 2  # the first import plus one retranslation, only before any verdict
+MAX_IMPORTS = 2  # first import plus one retranslation before any verdict
 HISTORY = ("rendered", "sha1", "integrity", "review", "review_votes", "reviewed_sha1",
            "n_imports")  # kept when a review-failed rendering is retranslated
 LINE_BREAKS = ("\n", "\r", "\v", "\f", "\x85", "\u2028", "\u2029")
 CTL = ("ctl-invoice", "ctl-parcel")  # reviewed suite copy controls, the defect donors
 CANARY_TYPES = ("wrong_request", "no_request", "added_content", "untranslated")
-LANG_CANARY_MIN = (3, 4)  # each language's merged verdict fails >= 3 of its 4 defects (75%)
+LANG_CANARY_MIN = (3, 4)  # a language's merged verdict must fail >= 3 of its 4 defects
 
 TRANSLATE_RULES = (
     "Translate each English sentence into the item's language as natural, fluent text in that "
@@ -72,18 +66,18 @@ RUBRIC = (
     "item as [{\"lang\", \"key\", \"verdict\": \"pass\"|\"fail\", \"reason\"}]; modify no file.")
 
 
-# ----------------------------------------------------------------------------- wrappers
+# wrappers
 def protected_counts(key: str) -> dict[str, int]:
     return {t: WRAPPERS[key].count(t) for t in PROTECTED if t in WRAPPERS[key]}
 
 
 def fill(wrapper: str, decoy: str) -> str:
-    # the answer-substitution wrapper with its decoy (str.replace: decoys may hold braces)
+    # str.replace since decoys may hold braces
     return wrapper.replace(DECOY, decoy)
 
 
 def integrity(english: str, rendered: str) -> list[str]:
-    # problems that make a rendering unusable before any review (empty = OK)
+    # problems that make a rendering unusable (empty = OK)
     checks = {
         "empty_or_untranslated": not rendered.strip() or rendered.strip() == english.strip(),
         "protected_tokens": any(rendered.count(t) != english.count(t) for t in PROTECTED),
@@ -109,7 +103,7 @@ def load_cache(lang: str) -> dict:
 
 
 def problems(lang: str) -> dict[str, str]:
-    # wrapper key -> why it cannot be used yet; empty = renderable (en needs no rendering)
+    # wrapper key -> why it is not usable yet, empty = renderable
     if lang == "en":
         return {}
     recs, out = load_cache(lang)["records"], {}
@@ -130,7 +124,7 @@ def problems(lang: str) -> dict[str, str]:
 
 
 def wrapper_texts(lang: str) -> dict[str, str]:
-    # key -> the wrapper text in `lang`; refuses unless every wrapper is reviewed 'pass'
+    # key -> wrapper text in lang, only if every wrapper passed review
     if lang not in LANGS:
         raise SystemExit(f"unknown language {lang!r}; supported: {LANGS}")
     if bad := problems(lang):
@@ -140,7 +134,7 @@ def wrapper_texts(lang: str) -> dict[str, str]:
 
 
 def export(langs: Sequence[str], force: bool = False) -> dict:
-    # the translation worklist: every wrapper per language, its protected tokens and the rules
+    # translation worklist: wrappers per language, protected tokens and rules
     if unknown := [x for x in langs if x not in NAMES]:
         raise SystemExit(f"no rendering needed or unknown language: {unknown}")
     doc = {"rules": TRANSLATE_RULES,
@@ -157,7 +151,7 @@ def export(langs: Sequence[str], force: bool = False) -> dict:
 
 
 def _read_translations(path: str, got: dict[str, dict[str, str]]) -> None:
-    # one translation file (untrusted): {"renderings": [{lang, key, rendered}]}
+    # one untrusted translation file: {"renderings": [{lang, key, rendered}]}
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     rows = data.get("renderings") if isinstance(data, dict) else None
     if not isinstance(rows, list):
@@ -186,8 +180,7 @@ def _replace_problem(old: dict, after_review_fail: bool) -> str | None:
 
 def import_files(paths: Sequence[str], allow_partial: bool = False,
                  after_review_fail: bool = False) -> dict:
-    # validate everything, then store each rendering with its integrity problems; a reviewed
-    # rendering is never replaced, except one retranslation of a 'fail' (kept in 'history')
+    # a reviewed rendering is only replaced by one retranslation of a 'fail'
     got: dict[str, dict[str, str]] = {}
     for p in paths:
         _read_translations(p, got)
@@ -232,11 +225,10 @@ def import_files(paths: Sequence[str], allow_partial: bool = False,
     return report
 
 
-# ----------------------------------------------------------------------------- two-checker review
+# two-checker review
 def canaries(lang: str, recs: dict, ctl: dict[str, dict]) -> list[tuple[str, str, str, str]]:
-    # planted defects (type, source key, shown text, donor); no_request joins the two copy-control
-    # statements with {decoy} for the witness: two sentences like the note, but no request
-    sep ="" if lang == "zh" else " "
+    # planted defects (type, source key, shown text, donor)
+    sep = "" if lang == "zh" else " "
     statement = sep.join(ctl[c]["rendered"].replace(ctl[c]["witness"], DECOY) for c in CTL)
     return [("wrong_request", "fmt-allcaps", recs["fmt-quotation"]["rendered"], "fmt-quotation"),
             ("no_request", "ans-sub", statement, "+".join(CTL)),
@@ -246,7 +238,7 @@ def canaries(lang: str, recs: dict, ctl: dict[str, dict]) -> list[tuple[str, str
 
 
 def review_dir(round_: str) -> Path:
-    # one directory per review round, so no round's evidence is ever overwritten
+    # one directory per review round so no evidence is overwritten
     if not round_.isalnum():
         raise SystemExit(f"round name {round_!r}: letters and digits only")
     return REN / f"review_{round_}"
@@ -258,8 +250,7 @@ def shuffle_seed(lang: str, round_: str) -> str:
 
 def build_review(langs: Sequence[str] | None = None, force: bool = False,
                  round_: str = "r1") -> list[dict]:
-    # unreviewed wrappers plus 4 planted defects per language under opaque ids, shuffled with a
-    # seed per language and round; key.json maps the ids to their types
+    # unreviewed wrappers plus 4 planted defects per language, shuffled
     out = review_dir(round_)
     work_path, key_path = out / "worklist.json", out / "key.json"
     for p in (work_path, key_path):
@@ -296,8 +287,7 @@ def build_review(langs: Sequence[str] | None = None, force: bool = False,
 
 
 def lang_canaries(key: dict, votes: Sequence[dict]) -> dict[str, dict]:
-    # per language: its planted defects, how many the merged verdict fails (valid iff >= 3 of
-    # its 4, integer comparison) and how many each checker fails on their own
+    # per language: planted defects, merged fails and per-checker fails
     rows: dict[str, list[tuple[bool, ...]]] = {k.split("|", 1)[0]: [] for k in key}
     for k, info in key.items():
         if info["type"] != "real":
@@ -311,9 +301,8 @@ def lang_canaries(key: dict, votes: Sequence[dict]) -> dict[str, dict]:
 
 
 def canary_check(key: dict, votes: Sequence[dict]) -> dict:
-    # the merged verdict (fail if either checker fails) must catch >= 90% of all planted defects
-    # and >= 75% of each type, and >= 3 of the 4 defects of a language for it to be applied
-    by:dict[str, dict[str, int]] = defaultdict(lambda: {"n": 0, "merged_fail": 0})
+    # merged verdict must catch >= 90% of defects and >= 75% per type
+    by: dict[str, dict[str, int]] = defaultdict(lambda: {"n": 0, "merged_fail": 0})
     for k, info in key.items():
         lk = tuple(k.split("|", 1))
         by[info["type"]]["n"] += 1
@@ -338,9 +327,8 @@ def canary_check(key: dict, votes: Sequence[dict]) -> dict:
 
 
 def apply_review(paths: Sequence[str], worklist: Path) -> dict:
-    # merged verdicts (pass iff both checkers pass) for the languages whose planted defects were
-    # caught; everything is validated before any write and no verdict is ever changed
-    work, votes =load_votes(paths, worklist)
+    # merged verdicts for languages whose defects were caught
+    work, votes = load_votes(paths, worklist)
     key = json.loads(worklist.with_name("key.json").read_text(encoding="utf-8"))
     if set(key) != {f"{w['lang']}|{w['key']}" for w in work}:
         raise SystemExit(f"{worklist}: ids differ from key.json (apply the combined worklist)")
@@ -386,8 +374,7 @@ def _agreement(rows: Sequence[tuple[bool, bool]]) -> dict:
 
 
 def review_report(work: list[dict], votes: Sequence[dict], key: dict, check: dict) -> dict:
-    # per language: the two checkers' agreement on the real items and whether its verdicts were
-    # applied; '_all' pools the applied languages only
+    # per language: checker agreement and whether verdicts were applied
     per: dict[str, list[tuple[bool, bool]]] = defaultdict(list)
     for w in work:
         if key[f"{w['lang']}|{w['key']}"]["type"] == "real":

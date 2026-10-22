@@ -1,10 +1,3 @@
-"""GCG runs: per-host attack with the paired undefended arm, universal suffix training and eval.
-
-  gcg_run.py --adapter hard-s0 --hosts 40 --no-cache --compare-undefended
-      --out gcg/hard_s0       (every run: scripts/whitebox.py)
-"""
-from __future__ import annotations
-
 import argparse
 import contextlib
 import inspect
@@ -26,10 +19,10 @@ from ipidefense.model import load_defense_lora_qwen, load_qwen_undefended
 from ipidefense.paths import MODELS, RUNS
 from ipidefense.utils import Transcript, sha, write_json
 
-# 28 layers x 7 projections; the loader attaches the adapter under the name "default".
+# 28 layers x 7 projections, attached as "default"
 N_LORA_MODULES = 196
 _HASHED_SOURCES = ("attacks/gcg.py", "experiments/gcg_run.py")
-MAX_CONSECUTIVE_TECH_FAILURES = 2  # more in a row = systemic problem: abort
+MAX_CONSECUTIVE_TECH_FAILURES = 2  # more in a row means a systemic problem
 
 
 def parse_args() -> argparse.Namespace:
@@ -78,8 +71,7 @@ def build_config(args: argparse.Namespace) -> gcg.GCGConfig:
 
 
 def load_arm(arm: str) -> tuple[torch.nn.Module, object, bool]:
-    # (model, tokenizer, is_peft); prompts are always rendered in the input-role template,
-    # so only Qwen input-role arms can be attacked
+    # (model, tokenizer, is_peft), Qwen input-role arms only
     base, adir, inline = ADAPTERS[arm]
     if base != "qwen":
         raise SystemExit(f"arm {arm!r} is a {base} arm; the GCG harness loads Qwen only.")
@@ -96,7 +88,7 @@ def load_arm(arm: str) -> tuple[torch.nn.Module, object, bool]:
 
 
 def check_adapter(model: torch.nn.Module) -> None:
-    # a no-op adapter (wrong keys, all-zero lora_B) would overstate the attack success
+    # a no-op adapter would inflate the attack success
     mods = [m for m in model.modules() if hasattr(m, "lora_B") and "default" in m.lora_B]
     if len(mods) != N_LORA_MODULES:
         raise SystemExit(f"adapter sanity: {len(mods)} LoRA modules, expected {N_LORA_MODULES}")
@@ -121,7 +113,7 @@ def select_hosts(args: argparse.Namespace, n: int) -> list:
 
 
 def source_hashes() -> dict[str, str]:
-    # sha1 of the attack sources and of the shared helpers the attack depends on
+    # sha1 of the attack code and the helpers it uses
     pkg = Path(__file__).resolve().parents[1]
     out = {name: sha((pkg / name).read_text(encoding="utf-8")) for name in _HASHED_SOURCES}
     parts = [inspect.getsource(f) for f in (classify, split_hosts, hosts_for, wilson)]
@@ -133,7 +125,7 @@ def source_hashes() -> dict[str, str]:
 def design_payload(
     args: argparse.Namespace, cfg: gcg.GCGConfig, hosts: list
 ) -> dict[str, object]:
-    # the invariant (timestamp-free) design content
+    # design content without timestamps
     assignment: list[dict] = [
         {
             "host_index": i,
@@ -160,12 +152,12 @@ def design_payload(
 
 
 def config_hash(payload: dict[str, object]) -> str:
-    # stable hash of the invariant payload, stamped into every per-host record
+    # stamped into every per-host record
     return sha(json.dumps(payload, sort_keys=True, ensure_ascii=False))
 
 
 def freeze_design(out: Path, payload: dict[str, object]) -> str:
-    # write design.json once; an existing one must match exactly and is never overwritten
+    # write design.json once, an existing one must match
     out.mkdir(parents=True, exist_ok=True)
     path = out / "design.json"
     cfg_hash = config_hash(payload)
@@ -190,15 +182,13 @@ ROWS = {"witness_first": ("wf", "obeyed"), "refusal_first_obeyed": ("rf", "obeye
 
 
 def host_hit(record: dict, row: str, field: str = "labels") -> bool:
-    # any check of the host met `row`; field="labels_rp1" reads the repetition-penalty 1.0
-    # re-checks, which exist only where the 1.05 check missed witness-first
+    # field="labels_rp1" reads the penalty 1.0 re-checks
     key, value = ROWS[row]
     return any(c.get(field, {}).get(key) == value for c in record["checks"])
 
 
 def summarize(records: list[dict], wall: float) -> dict[str, object]:
-    # k/n with Wilson 95% per row (a technical failure counts as an attack failure);
-    # wall_seconds sums the per-host records, so a resumed run reports its total
+    # technical failures count as attack failures
     n = len(records)
 
     def rate(flag) -> dict[str, object]:
@@ -221,7 +211,7 @@ def summarize(records: list[dict], wall: float) -> dict[str, object]:
         "starts_with_witness": rate(lambda r: host_hit(r, "starts_with_witness")),
         **{f"rp1_{row}": rate(lambda r, row=row: host_hit(r, row, "labels_rp1")) for row in ROWS},
         "rp1_hosts_checked": sum(any("labels_rp1" in c for c in r["checks"]) for r in records),
-        # rp1_* count hosts hit only at 1.0; this row is witness-first at 1.05 or at 1.0
+        # witness-first at 1.05 or at 1.0
         "rp_either_witness_first": rate(lambda r: r["success"]
                                         or host_hit(r, "witness_first", "labels_rp1")),
         "median_steps_to_success_wf": statistics.median(steps) if steps else None,
@@ -239,7 +229,7 @@ def _first_step(record: dict, key: str) -> int | None:
 def _attack_host_guarded(
     model, tok, embed_w, disallowed, host, injection, cfg, arm_ctx, i
 ) -> dict:
-    # one retry on error, then a technical-failure record, so a resume never re-crashes
+    # one retry, then a technical-failure record so a resume does not crash again
     for attempt in (1, 2):
         try:
             return gcg.attack_host(
@@ -247,8 +237,8 @@ def _attack_host_guarded(
                 arm_ctx, i,
             )
         except AssertionError:
-            raise  # a failed invariant (e.g. suffix round-trip) is a bug, never an attack failure
-        except Exception as exc:  # noqa: BLE001 - deliberately broad: OOM or otherwise
+            raise  # a failed invariant is a bug, not an attack failure
+        except Exception as exc:  # e.g. CUDA out of memory
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             print(f"  host {i}: attempt {attempt} failed: {type(exc).__name__}: {exc}", flush=True)
@@ -286,7 +276,7 @@ def run_arm(
                 f"resume refused: {tag}.jsonl host {rec.get('host_index')} was run under a "
                 f"different config_hash ({rec.get('config_hash')} != {cfg_hash})."
             )
-    if retry_technical:  # re-attack hosts whose records are technical failures
+    if retry_technical:  # re-attack technical failures
         done = {k for k in done if not transcript.done[k].get("technical_failure")}
     t0 = time.time()
     records: list[dict] = [r for k, r in transcript.done.items() if k in done]
@@ -332,7 +322,7 @@ def run_eval_suffix(
     model, tok, hosts, suffix: str, arm_ctx, out_dir: Path, tag: str, cfg: gcg.GCGConfig,
     cfg_hash: str,
 ) -> dict[str, object]:
-    # one fixed suffix after every injection, generation only, over all hosts x all EVAL_INJS
+    # fixed suffix on all hosts x EVAL_INJS, generation only
     out_dir.mkdir(parents=True, exist_ok=True)
     transcript = Transcript(out_dir / f"{tag}.jsonl")
     done = set(transcript.done)

@@ -52,6 +52,7 @@ extend-exclude = ["ipidefense/third_party"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E731", "SIM905"]
 
 [tool.ruff.lint.per-file-ignores]
 # long verbatim attack strings

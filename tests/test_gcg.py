@@ -1,7 +1,3 @@
-"""GCG attack on CPU: spans, disallowed ids, retokenisation filter, losses, sampler, resume and
-design freeze."""
-from __future__ import annotations
-
 import contextlib
 import json
 
@@ -21,7 +17,7 @@ DATA = "The quick brown fox jumps over the lazy dog near the river bank."
 
 @pytest.fixture(scope="module")
 def tiny_lm():
-    # a tiny random Qwen2ForCausalLM, so the cache plumbing uses the real class
+    # tiny random Qwen2 so the cache code uses the real class
     from transformers import Qwen2Config, Qwen2ForCausalLM
 
     cfg = Qwen2Config(
@@ -35,7 +31,7 @@ def tiny_lm():
     return model
 
 
-# ----------------------------------------------------------------------------- template and spans
+# template and spans
 def test_spans_reconstruct_build_inputs(qwen_tok):
     spans = gcg.render_spans(qwen_tok, INSTR, DATA, INJ)
     suffix_str = " ! ! !"
@@ -59,7 +55,7 @@ def test_target_is_witness_no_leading_space(qwen_tok):
     assert qwen_tok.decode(list(spans.target_ids)) == "HIJACKED"
 
 
-# ----------------------------------------------------------------------------- disallowed ids
+# disallowed ids
 def test_disallowed_contains_specials_and_pads(qwen_tok):
     rows = 152064
     disallowed = set(gcg.build_disallowed_ids(qwen_tok, rows).tolist())
@@ -75,14 +71,14 @@ def test_disallowed_excludes_plain_ascii_includes_newline(qwen_tok):
     assert 198 in disallowed  # "\n" is non-printable -> excluded
 
 
-# ----------------------------------------------------------------------------- filter
+# filter
 def test_filter_accepts_clean_rejects_merge(qwen_tok):
     spans = gcg.render_spans(qwen_tok, INSTR, DATA, INJ)
     clean = torch.tensor([gcg.INIT_TOKEN_ID] * 20)
     kept = gcg.filter_candidates(qwen_tok, clean.unsqueeze(0), spans)
     assert kept is not None and torch.equal(kept[0], clean)
 
-    # flip the last coordinate to ids until one re-tokenises differently in context
+    # change the last coordinate until one re-tokenizes differently
     rejected_any = False
     for tid in range(32, 120):
         cand = clean.clone()
@@ -97,7 +93,7 @@ def test_filter_accepts_clean_rejects_merge(qwen_tok):
     assert rejected_any
 
 
-# ----------------------------------------------------------------------------- candidate loss
+# candidate loss
 def _manual_ce(model, before, optim, after, target):
     full = torch.tensor([before + optim.tolist() + after + list(target)])
     logits = model(input_ids=full, use_cache=False).logits[0]
@@ -160,7 +156,7 @@ def test_ce_is_fp32_from_bf16_logits():
     assert out.dtype == torch.float32
 
 
-# ----------------------------------------------------------------------------- sampler
+# sampler
 def test_sample_valid_candidates_fills_width_and_roundtrips(qwen_tok):
     spans = gcg.render_spans(qwen_tok, INSTR, DATA, INJ)
     optim = torch.tensor([gcg.INIT_TOKEN_ID] * 20)
@@ -190,7 +186,7 @@ def test_sampler_shape_and_allowed(tiny_lm):
     assert not torch.isin(cand, disallowed).any()
 
 
-# ----------------------------------------------------------------------------- resume and design
+# resume and design
 class _FakeItem:
     def __init__(self, key: str) -> None:
         self.key = key
@@ -217,7 +213,7 @@ def test_freeze_design_matches_then_aborts_on_mismatch(tmp_path):
     first = run.freeze_design(tmp_path, payload)
     # same payload -> same hash, no overwrite, no error
     assert run.freeze_design(tmp_path, payload) == first
-    # a changed config aborts rather than overwriting the frozen file
+    # a changed config aborts instead of overwriting
     changed = {**payload, "config": {"steps": 250, "topk": 256}}
     with pytest.raises(SystemExit):
         run.freeze_design(tmp_path, changed)

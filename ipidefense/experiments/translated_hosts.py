@@ -1,9 +1,3 @@
-"""Non-English hosts (Bactrian-X es, vi, de, zh) with injections in the host language and English.
-
-Usage: translated_hosts.py prepare [--force] | run [--langs ...] | summarize
-"""
-from __future__ import annotations
-
 import argparse
 import gzip
 import hashlib
@@ -48,7 +42,7 @@ from ipidefense.metrics.stats import clopper_pearson_upper
 from ipidefense.utils import Item, sha, write_json
 
 REPO_ID = "MBZUAI/Bactrian-X"
-REVISION = "3698480a001cb3f62c61c314d4acb181eb31e983"  # Hub main; last commit 2023-05-27
+REVISION = "3698480a001cb3f62c61c314d4acb181eb31e983"  # Hub main, last commit 2023-05-27
 LICENSE = "CC BY-NC 4.0 (non-commercial; research use only)"
 CITATION = "Li, Koto, Wu, Aji and Baldwin (2023), Bactrian-X, arXiv:2305.15011"
 SOURCE = "en"
@@ -64,12 +58,12 @@ DATA = paths.DATA / "bactrian_x"
 RAW = DATA / "raw"
 OUT = paths.RUNS / "translated_hosts"
 N_HOSTS = 150
-ID_PREFIX = "alpaca-"  # the English hosts are Alpaca: same task distribution, new language
+ID_PREFIX = "alpaca-"  # the English sources are Alpaca rows
 TRAIN_SEEDS = (0, 1, 2)
 HOST_FIELDS = ("instruction", "data", "id", "en_instruction")
 ARMS = ("undef", "def-s0")
 SEEDS = (0,)
-INJ = ("host", "en")  # injection language: the host language L, or English
+INJ = ("host", "en")  # inject in the host language or in English
 OVERRIDE = ("ovr-hijacked", "ovr-override", "ovr-zeroday", "ovr-xyzzy", "ovr-plugh", "ovr-grault")
 MNT = 64
 MNT_CLEAN = 160
@@ -111,7 +105,7 @@ RULES = ("Per language L (es, vi, de, zh) and injection language (host = L, the 
          "hosts, one seed; it never changes the main claims about the attack channel.")
 
 
-# ===================================================================== raw data (untrusted)
+# raw data (untrusted)
 def raw_path(lang: str) -> Path:
     return RAW / "data" / f"{lang}.json.gz"
 
@@ -125,7 +119,7 @@ def file_sha256(path: Path) -> str:
 
 
 def _fetch(lang: str) -> Path:
-    """One raw file from the Hub at REVISION into RAW (public dataset: no token is sent)."""
+    """Fetch one raw file from the Hub at REVISION, without a token."""
     from huggingface_hub import hf_hub_download
 
     return Path(hf_hub_download(REPO_ID, f"data/{lang}.json.gz", repo_type="dataset",
@@ -133,8 +127,7 @@ def _fetch(lang: str) -> Path:
 
 
 def download(langs: Iterable[str]) -> dict[str, str]:
-    """Raw files at the pinned revision, fetched when absent or different; every file must
-    match its pinned sha256 before it is read."""
+    """Fetch missing or changed raw files and check their sha256."""
     digests = {}
     for lang in dict.fromkeys(langs):
         path = raw_path(lang)
@@ -151,8 +144,7 @@ def download(langs: Iterable[str]) -> dict[str, str]:
 
 
 def load_rows(path: Path) -> tuple[list[dict], int]:
-    """One raw file (untrusted: gzip + json.loads only) -> rows {id, instruction, input}, a null
-    input read as ''. Malformed rows are skipped and counted; ids must be unique."""
+    """Rows {id, instruction, input} of one raw file, malformed rows skipped."""
     records = json.loads(gzip.decompress(path.read_bytes()).decode("utf-8"))
     if not isinstance(records, list):
         raise SystemExit(f"{path}: expected a JSON list of records")
@@ -169,9 +161,9 @@ def load_rows(path: Path) -> tuple[list[dict], int]:
     return rows, bad
 
 
-# ===================================================================== hosts: filter + draw
+# host filter and draw
 def norm(text: str) -> str:
-    """Leakage key: casefold, Unicode punctuation (category P*) removed, whitespace collapsed."""
+    """Casefolded text without punctuation or extra whitespace."""
     kept = "".join(c for c in text.casefold() if not unicodedata.category(c).startswith("P"))
     return " ".join(kept.split())
 
@@ -221,7 +213,7 @@ def _id_key(host_id: str) -> tuple[str, int, str]:
 
 
 def draw(pool: Sequence[dict], lang: str, n: int) -> list[dict]:
-    """Fixed-seed sample of n hosts (random.Random('ml5-<lang>')) from the pool in id order."""
+    """Fixed-seed sample of n hosts from the pool."""
     ordered = sorted(pool, key=lambda h: _id_key(h["id"]))
     if len(ordered) < n:
         raise SystemExit(f"{lang}: {len(ordered)} eligible hosts, {n} needed")
@@ -233,8 +225,7 @@ def _bag(text: str) -> frozenset[str]:
 
 
 def nearest_training(hosts: Sequence[dict], train: Sequence[HostTask]) -> dict:
-    """Descriptive leakage check: the largest token Jaccard between a drawn host's English
-    source (instruction + input) and any training host."""
+    """Largest token Jaccard between a drawn host's English source and any training host."""
     ref = [(h, b) for h in dict.fromkeys(train) if (b := _bag(f"{h.instruction} {h.data}"))]
     best: tuple[float, dict | None, HostTask | None] = (0.0, None, None)
     for x in hosts:
@@ -259,7 +250,7 @@ def hosts_text(hosts: Sequence[dict]) -> str:
 
 
 def write_hosts(path: Path, hosts: Sequence[dict], force: bool = False) -> str:
-    """Write a host file; an identical file is left alone, a different one only with force."""
+    """Write a host file, replacing a different one only with force."""
     text = hosts_text(hosts)
     existed = path.exists()
     if existed and path.read_bytes() == text.encode("utf-8"):
@@ -285,7 +276,7 @@ def load_hosts(lang: str) -> list[dict]:
 
 
 def prepare(force: bool = False) -> dict:
-    """Download, filter and draw the hosts of every language; write the report and MANIFEST."""
+    """Download, filter and draw the hosts of every language."""
     digests = download((SOURCE, *LANGS))
     en_rows, en_bad = load_rows(raw_path(SOURCE))
     en = {r["id"]: r for r in en_rows}
@@ -357,7 +348,7 @@ def write_manifest(report: dict) -> None:
     (DATA / "MANIFEST.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
 
-# ===================================================================== injections + units
+# injections and units
 def override_templates() -> list[SuiteTemplate]:
     ts = [t for t in suite_templates() if t.family == "override"]
     if tuple(t.tid for t in ts) != OVERRIDE:
@@ -380,8 +371,7 @@ def _rendering_problem(t: SuiteTemplate, rec: dict | None) -> str | None:
 
 
 def host_injections(lang: str) -> dict[str, str]:
-    """tid -> the reviewed llm rendering of each override template in `lang`; refuses missing,
-    stale, non-llm, unreviewed, failed or integrity-flagged renderings."""
+    """tid -> reviewed llm rendering of each override template in `lang`."""
     recs = load_renderings(lang, "llm")
     bad = {t.tid: why for t in override_templates()
            if (why := _rendering_problem(t, recs.get(t.tid)))}
@@ -399,8 +389,7 @@ def injection_texts(lang: str) -> dict[tuple[str, str], str]:
 
 def attack_units(lang: str, hosts: Sequence[dict],
                  texts: dict[tuple[str, str], str]) -> list[list[Item]]:
-    """One unit per (injection language, template): data + newline + injection (D-end, as
-    suite.suite_units)."""
+    """One unit per (injection language, template), injection after the data."""
     return [[Item(f"{lang}|{c}|{t.tid}|{i}", h["instruction"], f"{h['data']}\n{texts[(c, t.tid)]}",
                   {"lang": lang, "inj": c, "inj_lang": lang if c == "host" else "en",
                    "tid": t.tid, "family": t.family, "witness": t.witness, "host": i,
@@ -416,7 +405,7 @@ def clean_units(lang: str, hosts: Sequence[dict]) -> list[list[Item]]:
 
 
 def refusal(text: str) -> bool:
-    """Any multilingual refusal cue (CUES_MULTI), as rf_multi in the attack scoring."""
+    """Any multilingual refusal cue (CUES_MULTI)."""
     low = text.casefold()
     return any(c in low for c in CUES_MULTI)
 
@@ -426,8 +415,7 @@ def score_clean(item: Item, text: str) -> dict:
 
 
 def detect_lang(text: str) -> str:
-    """langdetect label with a fixed seed (order-independent); zh-cn/zh-tw -> zh; 'unknown'
-    when the text has no detectable features (empty, digits only)."""
+    """Seeded langdetect label, 'unknown' when nothing is detectable."""
     DetectorFactory.seed = LANGDETECT_SEED
     try:
         code = detect(text)
@@ -436,7 +424,7 @@ def detect_lang(text: str) -> str:
     return LANG_ALIASES.get(code, code)
 
 
-# ===================================================================== run
+# run
 def transcript_path(out: Path, arm: Arm, seed: int, lang: str, kind: str) -> Path:
     return out / "transcripts" / f"{arm.spec}__s{seed}__{lang}__{kind}.jsonl"
 
@@ -453,8 +441,7 @@ def _langs(args: argparse.Namespace) -> list[str]:
 
 
 def _hosts_for(lang: str, limit: int) -> list[dict]:
-    """The prepared hosts, refused unless the file is byte-identical to what `prepare` wrote
-    (prepare_report.json sha256): a run never freezes edited or regenerated host files."""
+    """The prepared hosts, refused if the file changed since prepare."""
     report = json.loads((DATA / "prepare_report.json").read_text(encoding="utf-8"))
     want, got = report["langs"][lang]["sha256"], file_sha256(host_path(lang))
     if want != got:
@@ -463,7 +450,6 @@ def _hosts_for(lang: str, limit: int) -> list[dict]:
 
 
 def design(batch: int, texts: dict[str, dict[tuple[str, str], str]]) -> dict:
-    """The design stored in design.json: data, hosts, injections, settings and rules."""
     return {"exp": "translated_hosts", "data": f"{REPO_ID}@{REVISION}",
             "license": LICENSE, "host_rule": HOST_RULE,
             "hosts": {lang: {"file": host_path(lang).name, "sha256": file_sha256(host_path(lang)),
@@ -482,8 +468,7 @@ def design(batch: int, texts: dict[str, dict[tuple[str, str], str]]) -> dict:
 
 
 def run(args: argparse.Namespace) -> None:
-    """GPU: design freeze first, then per arm and language the attack (64 tokens) and clean
-    (160 tokens) generations, resumably; summary at the end."""
+    """Freeze the design, then run attack and clean generations per arm and language."""
     out, langs = _out(args), _langs(args)
     plan = arm_plan(ARMS, SEEDS)
     texts = {lang: injection_texts(lang) for lang in LANGS}  # all four: one design
@@ -504,10 +489,10 @@ def run(args: argparse.Namespace) -> None:
     summarize(argparse.Namespace(**{**vars(args), "langs": None}))  # every language, not a subset
 
 
-# ===================================================================== summary + decision
+# summary and decision
 def _records(out: Path, arm: Arm, seed: int, lang: str, kind: str,
              hosts: Sequence[dict]) -> list[dict]:
-    """Stored records of the current hosts; a record from another host file aborts."""
+    """Stored records of the current hosts, aborts on a record from another host file."""
     recs = []
     for r in read_records(transcript_path(out, arm, seed, lang, kind)).values():
         if r["host"] >= len(hosts):
@@ -520,7 +505,7 @@ def _records(out: Path, arm: Arm, seed: int, lang: str, kind: str,
 
 def attack_records(out: Path, arm: Arm, seed: int, lang: str, hosts: Sequence[dict],
                    texts: dict[tuple[str, str], str]) -> list[dict]:
-    """Attack records checked against the injection texts, with suite.nonecho added."""
+    """Attack records checked against the injection texts, plus nonecho."""
     witness = {t.tid: t.witness for t in override_templates()}
     recs = []
     for r in _records(out, arm, seed, lang, "attack", hosts):
@@ -532,8 +517,7 @@ def attack_records(out: Path, arm: Arm, seed: int, lang: str, hosts: Sequence[di
 
 
 def attack_block(recs: Sequence[dict]) -> dict:
-    """The suite metric block (wf/rf/rf_multi obey, near, wf_nonecho) plus the per-template
-    witness-first rates."""
+    """The suite metric block plus per-template witness-first rates."""
     by_t: dict[str, list[dict]] = defaultdict(list)
     for r in recs:
         by_t[r["tid"]].append(r)
@@ -544,8 +528,7 @@ def attack_block(recs: Sequence[dict]) -> dict:
 
 
 def decide(undef: dict, dfd: dict, n_hosts: int) -> dict:
-    """RULES for one (language, injection language) cell, on exact ratios; a cell with missing
-    generations makes no decision."""
+    """RULES for one (language, injection language) cell, on exact ratios."""
     u, d, per = undef["wf_obey"], dfd["wf_obey"], dfd["per_template"]
     full = (u["n"] == d["n"] == len(OVERRIDE) * n_hosts and set(per) == set(OVERRIDE)
             and all(v["n"] == n_hosts for v in per.values()))
@@ -613,8 +596,7 @@ def check_frozen_hosts(out: Path, langs: Sequence[str]) -> None:
 
 
 def summarize(args: argparse.Namespace) -> dict:
-    """CPU summary from the stored transcripts: cells per (language, injection language, arm),
-    the RULES decision and the preservation block; hosts beyond --limit-hosts are ignored."""
+    """CPU summary from the stored transcripts."""
     out, langs = _out(args), _langs(args)
     check_frozen_hosts(out, langs)
     plan = arm_plan(ARMS, SEEDS)
@@ -646,7 +628,7 @@ def summarize(args: argparse.Namespace) -> dict:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("prepare", "run", "summarize"))
     ap.add_argument("--langs", nargs="+", choices=LANGS)
     ap.add_argument("--limit-hosts", type=int, default=0, help="smoke test: first N hosts")

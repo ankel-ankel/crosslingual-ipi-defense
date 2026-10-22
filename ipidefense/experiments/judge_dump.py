@@ -1,10 +1,3 @@
-"""Regenerate attacked and benign response pairs (160 tokens) and write blinded judge items + key.
-
-Usage: judge_dump.py run --seeds 0 1 2  (GPU; ends with dump)
-       judge_dump.py dump                (CPU: rebuild the judge files)
-"""
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json
@@ -35,16 +28,16 @@ from ipidefense.utils import Item, write_json
 
 OUT = RUNS / "judge_dump"
 SALT = "r1-judge-2026-10"
-# Mean ROUGE-L of the published preservation (attack) and benign data-channel runs
+# mean ROUGE-L of the original runs, for reproduction checks
 ANCHORS = {"attack": {0: {"undef": 0.113, "def": 0.6502}},
            "benign": {0: 0.7004, 1: 0.6624, 2: 0.6847}}
 TOL = 0.01
 MNT = 160
-PARTS = {"attack": ("security", 8), "benign": ("benign", 1)}  # split, batch of the published runs
+PARTS = {"attack": ("security", 8), "benign": ("benign", 1)}  # (split, batch) of the original runs
 
 
 def units_for(part: str, hosts: Sequence[Any]) -> list[list[Item]]:
-    """attack: clean + 3 EVAL_INJS units over the same hosts; benign: one clean unit."""
+    """Attack: clean + EVAL_INJS units on the same hosts. Benign: one clean unit."""
     def item(tid: str, i: int, h: Any, inj: Any) -> Item:
         data = h.data if inj is None else f"{h.data}\n{inj.render()}"
         return Item(f"{tid}|{i}", h.instruction, data, {
@@ -100,8 +93,7 @@ def _iid(*parts: object) -> str:
 
 def _pair(kind: str, ref: dict, cand: dict, arm: str, seed: int,
           dup: int = 0) -> tuple[dict, dict]:
-    """(visible item, key entry) for one reference/candidate pair; arm identity, outcome labels,
-    ROUGE-L, sanity expectations and duplicate links stay in the key, never shown to the judge."""
+    """Visible item and key entry for one pair. Arm and labels stay in the key."""
     iid = _iid(kind, arm, seed, cand["tid"], cand["host"], dup)
     inj = cand.get("injection")
     item = {"item_id": iid, "instruction": cand["instruction"], "data_clean": cand["data_clean"],
@@ -118,7 +110,7 @@ def _pair(kind: str, ref: dict, cand: dict, arm: str, seed: int,
 
 
 def _with_text(recs: dict[str, dict], hosts: Sequence[Any]) -> dict[tuple[str, int], dict]:
-    """Records keyed by (tid, host) with the clean data and instruction re-attached."""
+    """Records keyed by (tid, host) with clean data and instruction added back."""
     return {(r["tid"], r["host"]): {**r, "instruction": hosts[r["host"]].instruction,
                                     "data_clean": hosts[r["host"]].data}
             for r in recs.values()}
@@ -165,11 +157,11 @@ def collect(args: argparse.Namespace, out: Path) -> tuple[list[tuple[dict, dict]
 
 
 def dump(args: argparse.Namespace) -> dict:
-    """Blind, shuffled judge file plus the unblinding key (CPU; reads the transcripts)."""
+    """Write the blind, shuffled judge file and the unblinding key."""
     out = Path(args.out_dir) / ("smoke" if args.limit_hosts else "")
     pairs, repro = collect(args, out)
     rng = random.Random(0)
-    # identical-pair sanity items and a duplicate subset (test-retest)
+    # identical-pair sanity items and a test-retest duplicate subset
     cleans = [(i, k) for i, k in pairs if k["pair_type"] == "attacked"]
     seen: set[str] = set()
     for item, key in rng.sample(cleans, min(args.n_sanity, len(cleans))):
@@ -205,7 +197,7 @@ def dump(args: argparse.Namespace) -> dict:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("run", "dump"))
     ap.add_argument("--arms", nargs="+", default=["undef", "def-s0", "def-s1", "def-s2"])
     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])

@@ -1,10 +1,3 @@
-"""Judge validation: a 100-item blinded audit set, web-chat judge passes (C, D, E) and their
-agreement with judge passes A and B. CPU only.
-
-Usage: judge_validate.py sample | ingest-web REPLY.json --label C | report
-"""
-from __future__ import annotations
-
 import argparse
 import json
 import random
@@ -26,7 +19,7 @@ STRATA = {  # (pair type, arm) -> number of audit items
     ("attacked", "undef|0"): 10, ("attacked", "undef|1"): 10, ("attacked", "undef|2"): 10,
 }
 FIELDS = ("instruction", "data_clean", "injection", "reference_output", "candidate_output")
-WEB_LABELS = ("C", "D", "E", "F", "G")  # web-chat judges; A and B are the main judge passes
+WEB_LABELS = ("C", "D", "E", "F", "G")  # web-chat judges, A and B are the main passes
 
 
 def _stratum(k: dict) -> tuple[str, str]:
@@ -60,8 +53,7 @@ def sample(dump: Path = DUMP, out: Path = OUT) -> None:
                      "meta": {"task": it["meta"]["task"]}})
         akey[qid] = {"item_id": iid, "stratum": f"{st[0]}|{st[1]}", **{
             k: key[iid][k] for k in ("pair_type", "arm", "seed")}}
-    # calibration: by-construction cases only (identical pairs -> Q1=5; witness-only obeyed ->
-    # Q1=1, Q3=yes)
+    # calibration items with known answers
     taken = {c[0] for c in chosen}
     ident = [i for i in sorted(items)
              if key[i]["pair_type"] == "sanity_identical" and not key[i]["dup_of"]]
@@ -105,7 +97,7 @@ def _validate(js: list[dict], ids: set[str], who: str) -> dict[str, dict]:
 
 def ingest_web(path: str, label: str = "C", model: str | None = None, dump: Path = DUMP,
                out: Path = OUT) -> None:
-    """A web chat's JSON reply -> pass_<label>.json; an existing pass is never overwritten."""
+    """Save a web chat's JSON reply as pass_<label>.json, never overwriting."""
     if label not in WEB_LABELS:
         raise SystemExit(f"label must be one of {WEB_LABELS}")
     dest = out / "validation" / f"pass_{label}.json"
@@ -184,7 +176,7 @@ def report(dump: Path = DUMP, out: Path = OUT) -> None:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("sample", "ingest-web", "report"))
     ap.add_argument("path", nargs="?")
     ap.add_argument("--label", default="C", help="ingest-web: pass label, one of C D E F G")

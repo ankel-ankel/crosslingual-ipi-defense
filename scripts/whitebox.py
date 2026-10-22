@@ -1,21 +1,13 @@
-"""White-box GCG: cache check, undefended sanity run, per-host attacks, universal suffix and its
-evaluations, the paired McNemar test of def-s0 against hard-s0 and the per-host table. Every run
-resumes from its transcript.
-
-Run after main_results.py: it attacks its adapters def-s0, hard-s0 and hard-s1.
-"""
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # runs without installing
 
-from ipidefense.runner import Run, Step, main, root_arg  # noqa: E402
+from ipidefense.runner import Run, Step, main, root_arg
 
 GCG_RUN = "ipidefense.experiments.gcg_run"
 RUNS = root_arg("IPI_RUNS", "runs")
-# the prefix-cache loss misses the 0.02-nat check in bf16, so the attacks use the full forward
+# no prefix cache, its bf16 loss misses the 0.02-nat check
 GCG = ["--steps", "500", "--width", "512", "--topk", "256", "--suffix-len", "20",
        "--check-every", "20", "--batch", "128", "--no-cache"]
 
@@ -27,7 +19,7 @@ def check(run: Run) -> None:
 
 
 def per_host(run: Run) -> None:
-    # the hardened runs also attack the undefended model on the same hosts
+    # also attack the undefended model on the same hosts
     run.py(GCG_RUN, "--adapter", "hard-s0", "--hosts", "40", *GCG, "--compare-undefended",
            "--out", "gcg/hard_s0")
     run.py(GCG_RUN, "--adapter", "def-s0", "--hosts", "30", *GCG, "--out", "gcg/def_s0")
@@ -48,7 +40,7 @@ def universal(run: Run) -> None:
 
 
 def report(run: Run) -> None:
-    # paired exact McNemar of def-s0 against hardened seed 0 on hosts 0-29 (CPU)
+    # paired McNemar of def-s0 vs hard-s0 on hosts 0-29
     run.py("ipidefense.experiments.gcg_mcnemar", "gcg/hard_s0/hard-s0.jsonl",
            "gcg/def_s0/def-s0.jsonl", "--hosts", "30",
            "--out", "gcg/def_s0/mcnemar_vs_hard_s0.json")
@@ -68,4 +60,4 @@ STEPS = [
 
 
 if __name__ == "__main__":
-    main(__file__, __doc__, STEPS)
+    main(__file__, STEPS)

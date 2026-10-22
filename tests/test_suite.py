@@ -1,8 +1,3 @@
-"""CPU tests of the multilingual suite: templates, renderings and QA, the human pool, arm plans,
-generation parity with the published path (tiny Qwen2), resume guard, design freeze, statistics
-and the suite rules."""
-from __future__ import annotations
-
 import argparse
 import json
 from collections import Counter
@@ -39,7 +34,7 @@ def tiny(tok):
 
 
 class FakeTr:
-    """Stands in for NLLB: tags the text; `tail` mimics the hallucinated-tail artifact."""
+    """Fake NLLB that tags the text. tail mimics the hallucinated tail."""
 
     def __init__(self, tail: str = "") -> None:
         self.tail, self.calls = tail, 0
@@ -49,7 +44,7 @@ class FakeTr:
         return f"[{code}] {text.strip()}{self.tail}"
 
 
-# ----------------------------------------------------------------------------- suite registry
+# suite registry
 @needs_alpaca
 def test_registry_families_and_sources() -> None:
     ts = su.suite_templates()
@@ -117,7 +112,7 @@ def test_nonce_witnesses_absent_and_distant() -> None:
     for w in fresh:
         assert w.casefold() not in corpus, w
         assert w not in TRAIN_WITNESSES
-    for a in fresh:  # new witnesses vs every witness in use (OWNED/PWNED are training witnesses)
+    for a in fresh:  # new witnesses vs every witness in use
         for b in every:
             assert a == b or su.levenshtein(a.casefold(), b.casefold()) >= 3, (a, b)
     gen = su.nonce_witnesses(5, "test")
@@ -125,7 +120,7 @@ def test_nonce_witnesses_absent_and_distant() -> None:
     assert all(min(su.levenshtein(g.casefold(), w.casefold()) for w in every) >= 3 for g in gen)
 
 
-# ----------------------------------------------------------------------------- renderings + QA
+# renderings and QA
 def test_render_cache_v2_old_and_stale(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(su, "RENDER_DIR", tmp_path)
     ts = su.suite_templates()[:3]
@@ -187,7 +182,7 @@ def test_qa_script_share_and_witness_free_chrf(tmp_path, monkeypatch) -> None:
     assert "rubric" in cache
 
 
-# ----------------------------------------------------------------------------- human pool
+# human pool
 @needs_alpaca
 def test_human_pool_filters_and_sampling(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(su, "RENDER_DIR", tmp_path / "r")
@@ -244,7 +239,7 @@ def test_human_pool_format_release_and_descriptive(tmp_path, monkeypatch) -> Non
     assert claim["status"] == "descriptive (<20 templates)" and claim["pass"] is None
 
 
-# ----------------------------------------------------------------------------- arms + messages
+# arms and messages
 def test_arm_plan_is_leak_safe() -> None:
     plan = su.arm_plan(["undef", "def-s0", "def-s1", "hard-s1"], [0, 1])
     assert [(a.spec, s) for a, s in plan] == [("undef", 0), ("def-s0", 0), ("undef", 1),
@@ -270,7 +265,7 @@ def test_messages_filter_and_late_turn(tok) -> None:
     assert inline == build_messages("I", "D", True)
 
 
-# ----------------------------------------------------------------------------- generation
+# generation
 @needs_alpaca
 def test_generation_matches_published_path(tok, tiny) -> None:
     hs = hosts(0, "security")[:3]
@@ -313,7 +308,7 @@ def test_freeze_design(tmp_path) -> None:
         su.freeze_design(tmp_path, {"a": 2}, {})
 
 
-# ----------------------------------------------------------------------------- statistics
+# statistics
 def test_stats_helpers() -> None:
     m = su.mcnemar([True] * 10 + [False] * 5, [False] * 10 + [False] * 5)
     assert (m["x_only"], m["y_only"]) == (10, 0) and m["p_exact"] == pytest.approx(2 * 0.5**10)

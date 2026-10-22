@@ -1,9 +1,3 @@
-"""Response preservation under attack: ROUGE-L of each arm's injected-data answer against the
-same arm's clean-data answer (what the "ignored" outcomes contain).
-preservation.py --lora-dir models/defense-qwen-seed0 --seed 0
-"""
-from __future__ import annotations
-
 import argparse
 import json
 

@@ -1,8 +1,3 @@
-"""CPU tests of the summary's template check: records whose template is not in the current set are
-reported as dropped, and design templates without a record in a cell that ran are reported as
-missing; neither stops the summary."""
-from __future__ import annotations
-
 import argparse
 import json
 import logging
@@ -38,7 +33,7 @@ def _fake_render(t: su.SuiteTemplate) -> dict:
 
 @pytest.fixture()
 def env(monkeypatch):
-    """No NLLB, no host files, no model: renderings are the English templates."""
+    """No NLLB, host files or model. Renderings are the English templates."""
     def fake_load(arms):
         raise Stop("model load reached")
 
@@ -59,15 +54,14 @@ def _args(tmp: Path, exp: str, renderer: str, arms, seeds, langs) -> argparse.Na
 
 
 def _freeze(args: argparse.Namespace) -> None:
-    """run_exp up to the model load: writes design.json exactly as a real run does."""
+    """run_exp up to the model load, writing design.json like a real run."""
     with pytest.raises(Stop):
         su.run_exp(args)
 
 
 def _write(args: argparse.Namespace, skip: set[tuple[str, int, str, str]] = frozenset(),
            extra: Sequence = ()) -> None:
-    """Transcripts of every frozen template x 2 hosts per (arm, seed, lang) cell, minus `skip`
-    (arm, seed, lang, tid); `extra` adds (arm, seed, lang, tid) records of other templates."""
+    """Transcripts for each frozen template x 2 hosts per cell, minus skip."""
     out = su._out(args)
     for arm, seed in su.arm_plan(args.arms, args.seeds):
         cells = [(lang, t.tid, t.family, t.witness) for lang in args.langs
@@ -121,7 +115,6 @@ def test_dropped_record_and_missing_template_are_reported(env, tmp_path: Path, c
 
 
 def test_template_removed_after_the_run(env, tmp_path: Path, monkeypatch, caplog) -> None:
-    """The template set changes between generation and summary."""
     args = _args(tmp_path, "human", "v2", ["undef", "def-s0"], [0], ["en"])
     _freeze(args)
     _write(args)
@@ -134,7 +127,6 @@ def test_template_removed_after_the_run(env, tmp_path: Path, monkeypatch, caplog
 
 
 def test_unrun_cells_and_other_langs_are_not_missing(env, tmp_path: Path, caplog) -> None:
-    """Only cells with records are checked; a language outside --langs is not 'dropped'."""
     run = _args(tmp_path, "ml1b", "v2", ["undef", "def-s0"], [0], ["en", "es"])
     _freeze(run)
     _write(run)
@@ -155,8 +147,7 @@ def test_missing_design_is_reported_not_raised(env, tmp_path: Path, caplog) -> N
 
 
 def test_two_invocations_main_plus_seed0_extra(env, tmp_path: Path, caplog) -> None:
-    """Main languages on every arm and seed, then an extra language on seed 0 only. A cell an
-    invocation covers but that has no record is not 'missing'; a real gap is."""
+    """A covered cell without records is not 'missing', a real gap is."""
     main = _args(tmp_path, "ml3", "llm", ["undef", "def-s0", "def-s1"], [0, 1], ["es"])
     extra = _args(tmp_path, "ml3", "llm", ["undef", "def-s0"], [0], ["vi"])
     _freeze(main)
@@ -173,8 +164,7 @@ def test_two_invocations_main_plus_seed0_extra(env, tmp_path: Path, caplog) -> N
 
 
 def test_template_check_scopes_invocations_by_arm_and_seed(tmp_path: Path) -> None:
-    """Only invocations whose arms AND seeds cover a cell add templates to it (an arm run on
-    another seed, or another arm on the same seed, never makes a template 'missing')."""
+    """Only invocations covering both the arm and the seed add templates to a cell."""
     (tmp_path / "design.json").write_text(json.dumps({"invocations": [
         {"arms": ["undef", "def-s0"], "seeds": [0], "templates": {"es": [{"tid": "a"}]}},
         {"arms": ["undef", "def-s1"], "seeds": [1], "templates": {"es": [{"tid": "a"},

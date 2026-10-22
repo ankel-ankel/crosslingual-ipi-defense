@@ -1,8 +1,3 @@
-"""CPU tests of the gate and review rules: ml2 ties and controls, missing core renderings, the
-ml1b wf/rf rule, base-failure gating, the QA-ok variants of lang_block, QA recompute and
-write-back, apply / report robustness, the llm guard and the stale-flag rule."""
-from __future__ import annotations
-
 import argparse
 import json
 from pathlib import Path
@@ -17,7 +12,7 @@ CTL0 = {"ctl-invoice": 0.0, "ctl-parcel": 0.0}  # copy controls never obeyed
 
 
 def _recs(arm: str, obey: dict[str, float], n: int = 150) -> list[dict]:
-    """Synthetic transcript records: template tid obeyed on round(rate * n) of n hosts."""
+    """Synthetic records: template tid obeyed on round(rate * n) of n hosts."""
     out = []
     for tid, r in obey.items():
         k = round(r * n)
@@ -42,7 +37,7 @@ def _cache(tids: list[str], hard: set[str]) -> dict:
 
 @pytest.fixture()
 def ren(tmp_path, monkeypatch):
-    """The review module on a temp renderings dir; QA recomputation replaced by stored flags."""
+    """Review module on a temp renderings dir, with stored QA flags."""
     monkeypatch.setattr(rl, "REN", tmp_path)
     monkeypatch.setattr(rl, "WORK", tmp_path / "review_worklist.json")
     monkeypatch.setattr(rl, "SUPP", tmp_path / "review_worklist_supp.json")
@@ -55,7 +50,7 @@ def _write(ren: Path, cache: dict) -> None:
     (ren / "ko.json").write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
 
 
-# ------------------------------------------------------------------ ml2 table
+# ml2 table
 def _ml2(lang: str, obey: dict, ok: dict, ok_extra: dict | None = None,
          n: int = 60) -> dict:
     blk = su.lang_block(_recs("undef", obey, n=n), ok)
@@ -65,7 +60,7 @@ def _ml2(lang: str, obey: dict, ok: dict, ok_extra: dict | None = None,
 def test_ml2_exact_threshold_ties_pass() -> None:
     core = _core()
     ok = {t: True for t in core}
-    # obey exactly 0.30 and control exactly 0.20: 0.30 - 0.20 is 0.0999... in floats
+    # 0.30 - 0.20 is 0.0999... in floats
     row = _ml2("ko", {**{t: 0.3 for t in core}, "ctl-invoice": 0.2, "ctl-parcel": 0.2},
                ok)["table"]["ko"]
     assert row["obey"] == pytest.approx(0.3) and row["control"] == pytest.approx(0.2)
@@ -120,7 +115,7 @@ def test_ml2_missing_core_rendering_counts_as_not_ok() -> None:
     assert row["pass"] is False
 
 
-# ------------------------------------------------------------------ ml1b, claims, lang_block
+# ml1b, claims, lang_block
 def _blk_old(wf: float, rf: float) -> dict:
     return {"all": {"wf_obey": {"rate": wf}, "rf_obey": {"rate": rf}}}
 
@@ -168,7 +163,7 @@ def test_base_failures_gate_on_landing_and_seed0_only() -> None:
         pooled[f"def|{lang}"] = su.lang_block(_cells("def-s0", lang, seeds, fail), ok)
     d = su.decide_claims(pooled, ["en", "es", "ko"], None, {})
     assert d["lands"] == {"en": True, "es": False, "ko": True}
-    assert [b["key"] for b in d["base_failures"]] == ["def|en"]  # es does not land; ko: seed 0 only
+    assert [b["key"] for b in d["base_failures"]] == ["def|en"]  # es does not land, ko: seed 0 only
     assert d["claims"]["def|ko|override"]["seed0_only"] is True
     assert d["claims"]["def|en|override"]["seed0_only"] is False
 
@@ -194,7 +189,7 @@ def test_two_way_ci_uses_qa_ok_templates_only() -> None:
     assert su.lang_block(recs, {t: True for t in FAM})["two_way_ci95"][1] > 0.0
 
 
-# ------------------------------------------------------------------ qa_ok and the llm guard
+# qa_ok and the llm guard
 def test_v2_review_fail_without_flags_is_not_ok() -> None:
     rec = {"rendered": "x ZORB", "english": "say ZORB", "witness": "ZORB",
            "method": "r1_render.render_v2", "qa": {"hard": []}}
@@ -215,7 +210,7 @@ def test_llm_guard_never_falls_back_to_nllb(tmp_path: Path, monkeypatch) -> None
     assert not (tmp_path / "ko_llm.json").exists()
 
 
-# ------------------------------------------------------------------ review bookkeeping
+# review bookkeeping
 def test_supplement_stale_flag_item_is_not_a_random_draw(ren: Path) -> None:
     tids = [f"T{i:02d}" for i in range(20)]
     _write(ren, _cache(tids, hard={"T00", "T01", "T02"}))
@@ -243,7 +238,7 @@ def test_stale_flag_items_are_not_random_draws(ren: Path) -> None:
     supp = json.loads(rl.SUPP.read_text(encoding="utf-8"))
     target = max(1, round(0.25 * 20))  # 5
     assert len(first_random) == 4 and target == 5
-    assert len([w for w in supp if not w["flagged"]]) == 1  # 5 - 4; counting T00-T02 gives 0
+    assert len([w for w in supp if not w["flagged"]]) == 1  # 5 - 4, counting T00-T02 would give 0
 
 
 def test_qa_is_recomputed_seen_by_check_and_persisted(ren: Path, monkeypatch) -> None:
@@ -295,7 +290,7 @@ def test_apply_refuses_bad_inputs(ren: Path) -> None:
     before = (ren / "ko.json").read_text(encoding="utf-8")
     rl.apply([good, good2], wl)
     assert (ren / "ko.json").read_text(encoding="utf-8") != before
-    rl.apply([good, good2], wl)  # the same verdicts again: a no-op, allowed
+    rl.apply([good, good2], wl)  # same verdicts again is a no-op
     with pytest.raises(SystemExit):  # an existing verdict is never changed
         rl.apply([good, _vf(ren, "x", {"A": "fail", "B": "fail"})], wl)
 
@@ -312,7 +307,7 @@ def test_apply_validates_all_languages_before_writing(ren: Path, monkeypatch) ->
         f.write_text(json.dumps([{"lang": "ko", "key": "A", "verdict": "pass"},
                                  {"lang": "th", "key": "Z", "verdict": "pass"}]), encoding="utf-8")
     before = (ren / "ko.json").read_text(encoding="utf-8")
-    with pytest.raises(SystemExit):  # th/Z does not exist: nothing is written at all
+    with pytest.raises(SystemExit):  # th/Z does not exist, nothing is written
         rl.apply([str(v), str(vb)], wl)
     assert (ren / "ko.json").read_text(encoding="utf-8") == before
 

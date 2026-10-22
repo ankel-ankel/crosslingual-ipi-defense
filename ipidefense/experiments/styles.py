@@ -1,9 +1,3 @@
-"""Twelve attack styles with witnesses unseen in training (English), undefended vs defended.
-
-styles.py --lora-dir models/defense-qwen-seed0 --seed 0
-"""
-from __future__ import annotations
-
 import argparse
 import json
 

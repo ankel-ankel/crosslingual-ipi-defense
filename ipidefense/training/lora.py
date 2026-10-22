@@ -1,6 +1,3 @@
-"""LoRA model on all linear projections and a plain SFT loop (loss on the target tokens only)."""
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 import torch
@@ -52,7 +49,7 @@ def encode_example(
         return_tensors="pt",
         return_dict=True,
     )["input_ids"][0]
-    # mask the prompt: the loss covers the assistant turn only
+    # loss covers the assistant turn only
     labels = full.clone()
     labels[: len(prompt)] = -100
     return full, labels
@@ -80,7 +77,7 @@ def train_sft(
         order = torch.randperm(len(examples), generator=torch.Generator().manual_seed(seed + ep))
         opt.zero_grad()
         recent: list[float] = []
-        # batch size 1 with gradient accumulation; a final partial group still steps
+        # batch size 1 with grad accumulation, a final partial group still steps
         for i, idx in enumerate(order.tolist()):
             ids, labels = encode_example(tok, examples[idx])
             ids = ids[:max_len].unsqueeze(0).to(dev)

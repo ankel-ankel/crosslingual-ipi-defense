@@ -1,13 +1,10 @@
-"""Adapter registry: arm name -> backbone, adapter directory under MODELS, inline data format."""
-from __future__ import annotations
-
 import json
 from collections.abc import Iterable
 from pathlib import Path
 
 from ipidefense.paths import MODELS
 
-# name -> (backbone, adapter directory under MODELS or "" if undefended, data inline in user turn)
+# name -> (backbone, adapter dir or "", data inline)
 ADAPTERS: dict[str, tuple[str, str, bool]] = {
     "undef": ("qwen", "", False),
     "def-s0": ("qwen", "defense-qwen-seed0", False),
@@ -20,21 +17,19 @@ ADAPTERS: dict[str, tuple[str, str, bool]] = {
     "refuse-s0": ("qwen", "defense-qwen-seed0-refuse", False),
 }
 
-# Training seed of each adapter. Host slices depend on the seed, so an adapter is only
-# evaluated on slices of its own seed (another seed's slices overlap its training hosts).
+# adapters are only evaluated on slices of their own training seed
 ADAPTER_SEED: dict[str, int | None] = {
     "undef": None, "undef-inline": None,
     "def-s0": 0, "def-s1": 1, "def-s2": 2, "hard-s0": 0, "hard-s1": 1,
     "inline-s0": 0, "refuse-s0": 0,
 }
 
-# backbone -> base-model directory under MODELS
+# backbone -> base model dir under MODELS
 BASE_DIRS: dict[str, str] = {"qwen": "Qwen2.5-7B-Instruct",
                              "sealion": "Llama-SEA-LION-v3-8B-IT",
                              "mistral": "Mistral-7B-Instruct-v0.3"}
 
-# Other backbones, seed 0: published adapter and inline flag. Mistral's chat template has no
-# input role, so every Mistral arm has the data inline. Configurations A and B retrain them.
+# other backbones at seed 0, Mistral data is always inline
 BACKBONES: dict[str, tuple[str, bool]] = {
     "sealion": ("defense-sealion-seed0", False),
     "mistral": ("defense-mistral-seed0-inline", True),
@@ -57,7 +52,7 @@ for _bb, (_pub, _inline) in BACKBONES.items():
 
 
 def arms_base(names: Iterable[str], default: str = "qwen") -> str:
-    """The one backbone of a set of arms (one model load serves them all)."""
+    """Single backbone shared by a set of arms."""
     bases = {ADAPTERS[n][0] for n in names}
     if len(bases) > 1:
         raise ValueError(f"arms of different backbones cannot share one model load: "
@@ -66,10 +61,7 @@ def arms_base(names: Iterable[str], default: str = "qwen") -> str:
 
 
 def check_adapter_base(name: str) -> None:
-    """Refuse an adapter trained on another base model than its registry backbone.
-
-    SEA-LION and Mistral LoRA tensors have identical shapes, so a mix-up would load silently.
-    """
+    """Refuse an adapter trained on another base model."""
     base, adir, _ = ADAPTERS[name]
     if not adir:
         return
@@ -77,7 +69,7 @@ def check_adapter_base(name: str) -> None:
     if not path.exists():
         raise FileNotFoundError(f"{name}: {path} is missing (adapter not trained yet?)")
     trained_on = json.loads(path.read_text(encoding="utf-8")).get("base_model_name_or_path", "")
-    # adapter configs may store Windows paths; compare the last path component only
+    # configs may store Windows paths
     if trained_on.replace("\\", "/").rstrip("/").split("/")[-1] != BASE_DIRS[base]:
         raise ValueError(f"{name}: adapter trained on {trained_on!r}, registry backbone is "
                          f"{base} ({BASE_DIRS[base]})")

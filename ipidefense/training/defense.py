@@ -1,9 +1,3 @@
-"""Train the defense with LoRA SFT: the target is the frozen model's answer to the clean host, and
-about 40% of the hosts carry an injection (same target, or a fixed refusal with --refuse).
-defense.py --base qwen --seed 0
-"""
-from __future__ import annotations
-
 import argparse
 import json
 import random
@@ -112,7 +106,7 @@ def main() -> None:
                 chunk = host_items[k : k + args.batch]
                 targets += generate_batch(model, tok, chunk, max_new_tokens=mnt, inline=args.inline)
                 print(f"targets {min(k + args.batch, n_hosts)}/{n_hosts}", flush=True)
-        # clean with probability clean_frac, else a random template and witness in langs[i % n]
+        # clean with prob. clean_frac, else a random attack in langs[i % n]
         n_clean = 0
         for i, (h, target) in enumerate(zip(train_hosts, targets, strict=True)):
             if not target.strip():

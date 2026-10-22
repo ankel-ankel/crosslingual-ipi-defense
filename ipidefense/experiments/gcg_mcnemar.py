@@ -1,9 +1,3 @@
-"""Paired exact McNemar test between two per-host GCG runs (CPU, no model).
-
-  gcg_mcnemar.py gcg/hard_s0/hard-s0.jsonl gcg/def_s0/def-s0.jsonl
-"""
-from __future__ import annotations
-
 import argparse
 import json
 import sys
@@ -19,13 +13,12 @@ PAIR_KEYS = ("witness", "injection", "instruction_sha", "data_sha")
 
 
 def _path(spec: str) -> Path:
-    # a relative path resolves under RUNS, never the CWD
     p = Path(spec)
     return p if p.is_absolute() else RUNS / p
 
 
 def load_run(path: Path) -> tuple[dict[int, dict], dict]:
-    # per-host records (by host_index) and the run's design.json
+    # per-host records by host_index, plus design.json
     pre = path.parent / "design.json"
     if not path.exists() or not pre.exists():
         raise SystemExit(f"{path}: transcript or its design.json not found")
@@ -43,8 +36,7 @@ def outcome(record: dict, row: str) -> bool:
 
 
 def paired_test(a: Path, b: Path, n_hosts: int | None = None) -> dict:
-    # hosts are paired by index; a pair whose host, injection or GCG config differ is refused,
-    # and a technical failure counts as an attack failure
+    # a technical failure counts as a failed attack
     (ra, pa), (rb, pb) = load_run(a), load_run(b)
     if pa["config"] != pb["config"]:
         diff = sorted(k for k in pa["config"].keys() | pb["config"].keys()
@@ -73,8 +65,7 @@ def paired_test(a: Path, b: Path, n_hosts: int | None = None) -> dict:
                      "b_only": m["y_only"], "p_exact": m["p_exact"]}
 
     def side(path: Path, pre: dict, recs: dict[int, dict]) -> dict:
-        # arm = the transcript tag: a per-host directory holds <adapter>.jsonl and undef.jsonl
-        # under one design.json whose adapter is the defended arm
+        # arm is the transcript tag, e.g. <adapter>.jsonl or undef.jsonl
         return {"transcript": str(path), "arm": path.stem, "adapter": pre.get("adapter"),
                 "config_hash": pre.get("config_hash"),
                 "technical_failure_hosts": [i for i in paired if recs[i].get("technical_failure")]}
@@ -85,7 +76,7 @@ def paired_test(a: Path, b: Path, n_hosts: int | None = None) -> dict:
 
 
 def main(argv: Sequence[str] | None = None) -> dict:
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("a", help="per-host transcript, e.g. gcg/hard_s0/hard-s0.jsonl")
     ap.add_argument("b", help="the paired run's per-host transcript")
     ap.add_argument("--hosts", type=int, default=None, help="test hosts 0..N-1")

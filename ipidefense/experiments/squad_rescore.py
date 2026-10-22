@@ -1,9 +1,3 @@
-"""Official SQuAD v1.1 EM / F1 re-score of the stored answer-substitution outputs (200 per arm).
-
-Usage: squad_rescore.py  (after the content runs of nonemission.py)
-"""
-from __future__ import annotations
-
 import argparse
 import json
 from collections import defaultdict
@@ -22,7 +16,7 @@ def _key(q: str) -> str:
 
 
 def gold_index() -> dict[str, list[list[str]]]:
-    """Question text -> list of gold-answer lists (one per occurrence in SQuAD dev)."""
+    """Question text -> gold-answer lists, one per occurrence in SQuAD dev."""
     idx: dict[str, list[list[str]]] = defaultdict(list)
     for art in json.loads(SQUAD.read_text(encoding="utf-8"))["data"]:
         for para in art["paragraphs"]:
@@ -32,7 +26,7 @@ def gold_index() -> dict[str, list[list[str]]]:
 
 
 def rescore_file(name: str, idx: dict[str, list[list[str]]]) -> dict:
-    # transcripts keep only gold[:2], so the full gold lists are re-joined by question text
+    # transcripts keep only gold[:2], so re-join the full gold lists by question
     rows = [json.loads(x) for x in
             (RUNS / f"nonemission_transcripts_{name}.jsonl").read_text(
                 encoding="utf-8").splitlines() if x.strip()]
@@ -71,7 +65,7 @@ def rescore_file(name: str, idx: dict[str, list[list[str]]]) -> dict:
 
 
 def main() -> None:
-    argparse.ArgumentParser(description=__doc__.split("\n")[0]).parse_args()
+    argparse.ArgumentParser().parse_args()
     idx = gold_index()
     res = {"source": "nonemission_transcripts_<run>.jsonl (read-only)",
            "metric": "official SQuAD v1.1 normalize_answer / EM / token F1, max over golds",

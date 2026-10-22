@@ -1,9 +1,3 @@
-"""Subset label (CS, IL, SF, OTHER) of every IFEval instruction, in the order of follow_flags.
-
-Usage: ifeval_subsets.py  (writes data/ifeval_subsets.json)
-"""
-from __future__ import annotations
-
 import argparse
 import json
 
@@ -45,7 +39,7 @@ def label(iid: str, kwargs: dict | None) -> str:
 
 
 def build() -> dict:
-    """One label per prompt and instruction; refuses if a subset count differs."""
+    """One label per prompt and instruction, checked against the subset counts."""
     rows = load_prompts(0)
     labels = []
     for i, row in enumerate(rows):
@@ -64,7 +58,7 @@ def build() -> dict:
 
 
 def main() -> None:
-    argparse.ArgumentParser(description=__doc__.split("\n")[0]).parse_args()
+    argparse.ArgumentParser().parse_args()
     res = build()
     write_json(OUT, res)
     print(json.dumps({"counts": res["counts"], "prompts_with": res["prompts_with"]}))

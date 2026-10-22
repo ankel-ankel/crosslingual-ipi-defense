@@ -1,7 +1,3 @@
-"""Tensor Trust v2 raw dump: successful non-self hijacks containing 'Access Granted' -> {witness}.
-
-Usage: python scripts/build_data/human_attacks/tensor_trust.py RAW_ATTACKS_JSONL_BZ2 OUT_PARQUET
-"""
 import bz2
 import json
 import re

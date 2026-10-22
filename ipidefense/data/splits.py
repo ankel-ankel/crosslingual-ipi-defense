@@ -1,11 +1,7 @@
-"""Per-seed host slices of the shuffled Alpaca hosts, with leak-safe pairing for adapters."""
-from __future__ import annotations
-
 from ipidefense.arms import ADAPTER_SEED
 from ipidefense.data.hosts import HostTask, load_en_hosts
 
-# Slices of load_en_hosts(n, seed): it shuffles all usable rows and keeps the first n, so the
-# boundaries are the same for every n.
+# slices of load_en_hosts(n, seed), the same for every n
 SLICES: dict[str, tuple[int, int]] = {
     "train": (0, 1500),
     "security": (1500, 1650),
@@ -14,7 +10,7 @@ SLICES: dict[str, tuple[int, int]] = {
     "format": (1850, 2000),
     "pilot": (2000, 2030),
     "fresh": (2030, 2530),
-    "lrsel": (2530, 2630),  # DPO learning-rate selection only, never in reported numbers
+    "lrsel": (2530, 2630),  # only for DPO learning-rate selection
 }
 
 
@@ -24,11 +20,7 @@ def hosts(seed: int, split: str) -> tuple[HostTask, ...]:
 
 
 def hosts_for(arm: str, split: str, seed: int | None = None) -> tuple[HostTask, ...]:
-    """Hosts of a split on the arm's own training seed.
-
-    Undefended arms take `seed` (required), so they share the hosts of the defended arm
-    they are compared with.
-    """
+    """Hosts of a split on the arm's training seed (undefended arms need seed)."""
     own = ADAPTER_SEED[arm]
     if own is None:
         if seed is None:

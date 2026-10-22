@@ -1,10 +1,3 @@
-"""Supervised fine-tuning of one comparison arm (a0, a1, a2) from a built JSONL.
-
---schedule constant (default) is training.lora.train_sft exactly; cosine adds linear warmup and
-cosine decay. Example: sft.py --data data/baselines/seed0/a1.jsonl --seed 0
-"""
-from __future__ import annotations
-
 import argparse
 import contextlib
 import io
@@ -47,11 +40,10 @@ OPTIMIZER_TEXT = {
 CARD_HEADING = "## Training metadata"
 
 
-# ----------------------------------------------------------------------------- schedule
+# schedule
 def schedule_plan(n_examples: int, accum: int, epochs: int, schedule: str = "constant",
                   warmup_ratio: float = 0.0) -> dict[str, Any]:
-    """Optimizer steps of train_sft: ceil(n / accum) per epoch x epochs; cosine warms up over
-    ceil(total x warmup_ratio) steps (the HF Trainer formula), constant has no warmup."""
+    """Optimizer steps and warmup of train_sft (HF Trainer formula)."""
     if schedule not in SCHEDULES:
         raise ValueError(f"unknown schedule {schedule!r}: {SCHEDULES}")
     if not 0.0 <= warmup_ratio < 1.0:
@@ -69,7 +61,7 @@ def schedule_plan(n_examples: int, accum: int, epochs: int, schedule: str = "con
 
 
 def make_scheduler(opt: torch.optim.Optimizer, plan: dict[str, Any]) -> Any:
-    """None for the constant schedule; cosine: HF get_cosine_schedule_with_warmup."""
+    """None for the constant schedule, else HF cosine with warmup."""
     if plan["schedule"] == "constant":
         return None
     from transformers import get_cosine_schedule_with_warmup
@@ -82,8 +74,7 @@ def train_sft_sched(model: Any, tok: Any, examples: list[SFTExample], epochs: in
                     lr: float = 1e-4, accum: int = 8, max_len: int = 1024, log_every: int = 10,
                     seed: int = 0, schedule: str = "constant",
                     warmup_ratio: float = 0.0) -> dict[str, Any]:
-    """train_sft with an optional scheduler stepped after each optimizer step; returns the plan,
-    the optimizer step count and the lr used at every optimizer step."""
+    """train_sft with an optional scheduler stepped after each optimizer step."""
     plan = schedule_plan(len(examples), accum, epochs, schedule, warmup_ratio)
     torch.manual_seed(seed)
     model.gradient_checkpointing_enable()
@@ -158,8 +149,7 @@ def load_records(path: Path, seed: int, field: str) -> list[dict]:
 
 
 def check_manifest(path: Path, digest: str, allow_partial: bool = False) -> str:
-    """'ok' if the build manifest lists this file with this SHA-256; raise on a mismatch or on
-    a partial (smoke-only) build unless allow_partial."""
+    """'ok' if the build manifest lists this file with this SHA-256."""
     manifest = path.parent / "manifest.json"
     if not manifest.exists():
         return "no manifest"
@@ -185,7 +175,7 @@ def select(n: int, limit: int | None, longest: bool, lengths: list[int]) -> list
 
 
 def length_stats(lens: list[tuple[int, int]], max_len: int) -> dict[str, Any]:
-    """lens = (prompt tokens, full tokens) per sequence; raise if one has no supervision."""
+    """Length stats of (prompt, full) token pairs, raise if one has no supervision."""
     unsupervised = [k for k, (p, _) in enumerate(lens) if p >= max_len]
     if unsupervised:
         raise ValueError(f"{len(unsupervised)} sequences have no supervised token within "
@@ -212,7 +202,7 @@ def lora_settings(model: Any) -> dict[str, Any]:
 
 
 class LossTee(io.TextIOBase):
-    """Forwards writes and records the 'epoch E step S loss L' lines of the training loop."""
+    """Forwards writes and keeps the loss lines of the training loop."""
 
     PATTERN = re.compile(r"epoch (\d+) step (\d+) loss (\S+)")
 
@@ -305,7 +295,7 @@ def main(argv: list[str] | None = None) -> None:
     from ipidefense.training.lora import build_lora_model
 
     t0 = time.time()
-    torch.manual_seed(args.seed)  # seeded before building the LoRA model, as in the defense
+    torch.manual_seed(args.seed)  # seed before building the LoRA model
     model = build_lora_model(str(QWEN_DIR))
     t1 = time.time()
     tee = LossTee(sys.stdout)

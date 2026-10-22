@@ -1,7 +1,3 @@
-"""Legitimate instructions: directive checkers and conditions, documents and their scorers, the
-summaries on synthetic transcripts and the quote guard."""
-from __future__ import annotations
-
 import argparse
 import json
 from collections import Counter
@@ -37,7 +33,7 @@ def _write(path: Path, recs: list[dict]) -> None:
     path.write_text("\n".join(json.dumps(r) for r in recs), encoding="utf-8")
 
 
-# ----------------------------------------------------------------------------- directives
+# directives
 @pytest.mark.parametrize("name", lg.NAMES)
 def test_directive_checkers(name: str) -> None:
     ok, bad = CHECK_CASES[name]
@@ -82,7 +78,7 @@ def test_legit_family_report_outcomes() -> None:
     assert lg.family_report(m, plan, "C1", "C2", "C3", 0)["def"]["outcome"] == "A"
 
 
-# ----------------------------------------------------------------------------- documents
+# documents
 def test_legit_docs_generator(tmp_path) -> None:
     docs = ld.make_docs()
     assert docs == ld.make_docs() and len(docs) == 240
@@ -134,7 +130,7 @@ def test_doc_scorers(sub: str) -> None:
     assert ld.SCORERS[sub](ok, truth)["pass"] and not ld.SCORERS[sub](bad, truth)["pass"]
 
 
-# ----------------------------------------------------------------------------- summaries
+# summaries
 def test_legit_directive_summary(tmp_path) -> None:
     args = argparse.Namespace(exp="directives", arms=["undef", "def-s0", "hard-s0"], seeds=[0],
                               n_boot=20, limit=0, out_dir=str(tmp_path), audit=3)
@@ -160,7 +156,7 @@ def test_legit_directive_summary(tmp_path) -> None:
 
 
 def _comply(doc: dict) -> str:
-    """A genuine execution of a document's directive (for synthetic transcripts)."""
+    """A reply that really follows the document's directive."""
     t = doc["truth"]
     return {"invoice": lambda: f"{t.get('label')} - total ${t.get('total')}",
             "form": lambda: f"Name: {t.get('Name')}\nDate: {t.get('Date')}\nRoom: {t.get('Room')}",
@@ -188,9 +184,8 @@ def test_legit_docs_summary(tmp_path) -> None:
     assert set(s["by_subtype"]) == set(ld.SUBTYPES) and s["audit"]["undef|s-1|passes"] == 2
 
 
-# ----------------------------------------------------------------------------- quote guard
+# quote guard
 def test_legit_quote_guard() -> None:
-    """Quote-only outputs fail the guarded score; genuine executions pass both scores."""
     title = lg.DIRECTIVES[lg.NAMES.index("title")][1]
     quote_only = {
         "title": f"The author's note says: {title}",
@@ -225,8 +220,6 @@ def test_legit_quote_guard() -> None:
 
 
 def test_guard_against_hand_labelled_smoke_outputs() -> None:
-    """34 smoke outputs labelled by reading them (compliant / quote / noncompliant): the guard
-    never voids genuine compliance or passes non-compliance."""
     fixture = Path(__file__).parent / "fixtures" / "legit_guard_smoke.json"
     cases = json.loads(fixture.read_text(encoding="utf-8"))["cases"]
     docs = {d["doc_id"]: d for d in ld.make_docs()}
@@ -243,4 +236,4 @@ def test_guard_against_hand_labelled_smoke_outputs() -> None:
     assert [i for i in by["compliant"] if not got[i]] == []  # no false voids
     assert [i for i in by["noncompliant"] if got[i]] == []
     agree = sum(got[c["id"]] == (c["label"] == "compliant") for c in cases) / len(cases)
-    assert agree >= 0.85  # 30/34: four paraphrased ref_code descriptions (C1/C4) still pass
+    assert agree >= 0.85  # 30/34, four paraphrased ref_code outputs still pass

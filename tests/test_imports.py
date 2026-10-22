@@ -1,7 +1,3 @@
-"""Every ipidefense module imports; every script under scripts/ lists its steps, runs dry, and
-only runs modules that have a main()."""
-from __future__ import annotations
-
 import importlib
 import os
 import pkgutil

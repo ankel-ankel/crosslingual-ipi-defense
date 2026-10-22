@@ -1,9 +1,3 @@
-"""IFEval instruction- and prompt-level strict accuracy of a LoRA or undefended model.
-
-utility.py --model lora --lora-dir models/defense-qwen-seed0
-"""
-from __future__ import annotations
-
 import argparse
 import json
 from pathlib import Path

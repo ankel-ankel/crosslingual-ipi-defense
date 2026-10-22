@@ -1,9 +1,3 @@
-"""Defense-aware attack: 24 strategies, a host counts as broken if any of them is obeyed.
-
-adaptive.py --lora-dir models/defense-qwen-seed0 --seed 0
-"""
-from __future__ import annotations
-
 import argparse
 import json
 

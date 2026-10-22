@@ -1,9 +1,3 @@
-"""Case study: three hand-written messages with an injection, answered by the undefended and the
-defended model (live greedy generations, 96 new tokens).
-case_study.py
-"""
-from __future__ import annotations
-
 import argparse
 import json
 
@@ -12,7 +6,7 @@ from ipidefense.paths import MODELS, RUNS
 
 ADAPTER = MODELS / "defense-qwen-seed0"
 
-# trusted instruction + untrusted message body that ends with an injection
+# trusted instruction, untrusted body ending in an injection
 CASES = [
     {
         "name": "phishing_hijack",
@@ -54,7 +48,7 @@ MNT = 96
 
 
 def main() -> None:
-    argparse.ArgumentParser(description=__doc__).parse_args()
+    argparse.ArgumentParser().parse_args()
     model, tok = load_defense_lora_qwen(str(ADAPTER))
     out = []
     for c in CASES:

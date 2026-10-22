@@ -1,16 +1,9 @@
-"""Semantic fidelity, IFEval breakdown, legitimate instructions and the non-witness objectives in
-eight languages.
-
-Run after main_results.py: it reads its adapters and the outputs of its nonemission step.
-"""
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # runs without installing
 
-from ipidefense.runner import Run, Step, main, root_arg  # noqa: E402
+from ipidefense.runner import Run, Step, main, root_arg
 
 TASKACC = "ipidefense.experiments.taskacc"
 JUDGE = "ipidefense.experiments.judge"
@@ -23,7 +16,7 @@ RUNS = root_arg("IPI_RUNS", "runs")
 
 
 def taskacc(run: Run) -> None:
-    # the items are shipped in data/taskacc; prepare only fills gaps
+    # items are shipped in data/taskacc, prepare only fills gaps
     run.py(TASKACC, "prepare")
     run.py(TASKACC, "run", "--spot-unbatched", "50")
     run.py(TASKACC, "summarize")
@@ -34,11 +27,7 @@ def squad(run: Run) -> None:
 
 
 def judge(run: Run) -> None:
-    # The response pairs are generated again and split into chunks for passes A and B. To judge
-    # them again, send every chunk with data/judge/rubric.txt and merge the JSON replies:
-    #   judge.py merge --dump runs/judge_dump --pass A <reply files>
-    #   judge.py score --dump runs/judge_dump
-    # The labels, agreement and decision below come from the shipped judge passes (data/judge).
+    # the judge labels come from the shipped passes in data/judge
     run.py("ipidefense.experiments.judge_dump", "run", "--seeds", "0", "1", "2")
     run.py(JUDGE, "split", "--dump", f"{RUNS}/judge_dump", "--pass", "A")
     run.py(JUDGE, "split", "--dump", f"{RUNS}/judge_dump", "--pass", "B")
@@ -56,7 +45,7 @@ def ifeval(run: Run) -> None:
 
 
 def legit(run: Run) -> None:
-    # the documents are shipped; documents.py checks them
+    # documents are shipped, documents.py checks them
     run.py("ipidefense.data.documents")
     run.py(LEGIT, "run", "--exp", "directives", "--seeds", "0", "1", "2", "--unbatched", "300",
            "--batch", "50")
@@ -64,7 +53,7 @@ def legit(run: Run) -> None:
 
 
 def nonwitness(run: Run) -> None:
-    # every language must be renderable from the reviewed wrappers in data/renderings/nonwitness
+    # every language must render from the reviewed wrappers
     run.py(NONWITNESS, "check")
     run.py(NONWITNESS, "run")
     run.py(NONWITNESS, "summarize")
@@ -87,4 +76,4 @@ STEPS = [
 
 
 if __name__ == "__main__":
-    main(__file__, __doc__, STEPS)
+    main(__file__, STEPS)

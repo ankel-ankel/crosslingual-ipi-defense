@@ -1,6 +1,3 @@
-"""Generation requests, append-only JSONL transcripts with resume, small I/O helpers."""
-from __future__ import annotations
-
 import hashlib
 import json
 from collections.abc import Iterable, Iterator
@@ -14,7 +11,7 @@ def sha(text: str) -> str:
 
 @dataclass(frozen=True)
 class Item:
-    """One generation request; `key` must be unique within a transcript file."""
+    """One generation request. key must be unique within a transcript."""
     key: str
     instruction: str
     data: str | None
@@ -29,7 +26,7 @@ class Transcript:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.done: dict[str, dict] = {}
         if path.exists():
-            # split on "\n" only: ensure_ascii=False leaves U+2028/U+2029/U+0085 unescaped
+            # split on "\n" only, since U+2028/U+2029/U+0085 stay unescaped
             lines = path.read_text(encoding="utf-8").split("\n")
             for n, line in enumerate(lines):
                 if not line.strip():

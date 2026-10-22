@@ -1,9 +1,3 @@
-"""Prefix-cache vs full-sequence GCG candidate loss on five pilot hosts (gate: max |delta| <= 0.02).
-
-  gcg_cache_check.py      (GPU; writes RUNS/gcg/cache_check.json)
-"""
-from __future__ import annotations
-
 import argparse
 import contextlib
 
@@ -20,8 +14,8 @@ GATE = 0.02
 
 
 def main() -> None:
-    argparse.ArgumentParser(description=__doc__).parse_args()
-    # hardened seed-0 adapter (unmerged PeftModel); 8 valid candidates per pilot host
+    argparse.ArgumentParser().parse_args()
+    # hardened seed-0 adapter, 8 candidates per pilot host
     model, tok = load_defense_lora_qwen(str(MODELS / "defense-qwen-seed0-hardened"))
     g.freeze_model(model)
     emb = model.get_input_embeddings().weight

@@ -1,6 +1,3 @@
-"""Alpaca host tasks (instruction + input) that carry the injections."""
-from __future__ import annotations
-
 import json
 import random
 from dataclasses import dataclass

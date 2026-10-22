@@ -1,7 +1,3 @@
-"""Dry runs of the run() entry points of suite, taskacc, judge_dump, legit and channel_swap with a
-tiny PEFT model on CPU: design freeze before transcripts, generation, resume-safe files, summary."""
-from __future__ import annotations
-
 import argparse
 import copy
 import json

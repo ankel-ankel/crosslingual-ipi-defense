@@ -1,6 +1,3 @@
-"""Data, model and output roots. Override with IPI_DATA, IPI_MODELS and IPI_RUNS."""
-from __future__ import annotations
-
 import os
 from pathlib import Path
 

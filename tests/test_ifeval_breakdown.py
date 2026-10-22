@@ -1,6 +1,3 @@
-"""IFEval breakdown statistics on synthetic transcripts, and the subset labels."""
-from __future__ import annotations
-
 import json
 
 import pytest

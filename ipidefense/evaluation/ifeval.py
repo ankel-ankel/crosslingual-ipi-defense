@@ -1,6 +1,3 @@
-"""IFEval prompts and strict per-instruction checks (vendored Google checker)."""
-from __future__ import annotations
-
 import json
 
 from ipidefense.paths import DATA

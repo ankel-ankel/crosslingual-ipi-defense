@@ -1,7 +1,3 @@
-"""LLM-judge bookkeeping: blinded judge items, split / merge / score, agreement, the Newcombe
-decision, and the validation passes (ingest and report)."""
-from __future__ import annotations
-
 import argparse
 import json
 from pathlib import Path
@@ -20,7 +16,7 @@ needs_alpaca = pytest.mark.skipif(not (paths.DATA / "alpaca_cleaned.json").exist
                                   reason="run scripts/prepare_data.py")
 
 
-# ----------------------------------------------------------------------------- judge items
+# judge items
 @needs_alpaca
 def test_judge_dump_blind_items(tmp_path) -> None:
     args = argparse.Namespace(arms=["undef", "def-s0"], seeds=[0], dup_frac=0.1, n_sanity=3,
@@ -51,7 +47,7 @@ def test_judge_dump_blind_items(tmp_path) -> None:
     assert set(s["reproduction"]) == {"attack|undef|s0", "attack|def-s0|s0", "benign|def-s0|s0"}
 
 
-# ----------------------------------------------------------------------------- split, merge, score
+# split, merge, score
 def _dump(tmp: Path, n_att: int = 200, n_ben: int = 100) -> Path:
     items, key = [], {}
     for k in range(n_att + n_ben):
@@ -128,7 +124,7 @@ def test_kappa_and_newcombe() -> None:
 
 def test_decision_preserved_when_attacked_matches_benign(tmp_path: Path) -> None:
     d = _dump(tmp_path, 1000, 300)
-    for name in ("A", "B"):  # 90% faithful everywhere; 2.0% of attacked items influenced
+    for name in ("A", "B"):  # 90% faithful everywhere, 2% of attacked items influenced
         f = _judge(d, name, lambda k, it: _ok(q1=4 if k % 10 else 3,
                                               q3="yes" if k < 1000 and k % 50 == 0 else "no"))
         rj.merge(d, name, [str(f)])
@@ -148,7 +144,7 @@ def test_constant_labels_give_undefined_kappa_and_no_primary(tmp_path: Path) -> 
 
 def test_decision_fails_on_influence_or_gap(tmp_path: Path) -> None:
     d = _dump(tmp_path, 1000, 300)
-    att = lambda k, it: it["meta"]["task"] == "attacked"  # noqa: E731
+    att = lambda k, it: it["meta"]["task"] == "attacked"
     fa = _judge(d, "A", lambda k, it: _ok(q3="yes" if att(k, it) and k % 20 == 0 else "no"))
     fb = _judge(d, "B", lambda k, it: _ok())
     rj.merge(d, "A", [str(fa)])
@@ -177,7 +173,7 @@ def test_undef_arm_counted_once(tmp_path: Path) -> None:
 
 
 def _sanity_dump(tmp: Path, n_ident: int, n_witness: int) -> Path:
-    """i0000.. identical pairs (Q1=5), then witness-only items; i0029 duplicates i0000."""
+    """Identical pairs (Q1=5), then witness-only items. i0029 duplicates i0000."""
     d = _dump(tmp, 30, 0)
     key = json.loads((d / "judge_key.json").read_text(encoding="utf-8"))
     for k in range(n_ident + n_witness):
@@ -215,7 +211,7 @@ def test_conservative_labels() -> None:
     assert lab["faithful_A"] is True and lab["influenced_B"] is False
 
 
-# ----------------------------------------------------------------------------- validation
+# validation
 IDS = [f"Q00{i}" for i in range(1, 7)]
 STRATA = ["attacked|def-s0", "attacked|def-s0", "benign|def-s0", "benign|def-s0",
           "attacked|undef|0", "attacked|undef|0"]

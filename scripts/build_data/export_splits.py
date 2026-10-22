@@ -1,9 +1,3 @@
-"""Write data/splits/seed{0,1,2}.json: for every host slice, the Alpaca row indices in host order.
-
-python scripts/build_data/export_splits.py
-"""
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json
@@ -16,7 +10,7 @@ from ipidefense.paths import DATA
 
 
 def row_order(rows: list[dict], seed: int) -> list[int]:
-    # filter and shuffle of load_en_hosts on row indices (the shuffle depends on the length only)
+    # same filter and shuffle as load_en_hosts, on row indices
     usable = [
         i
         for i, r in enumerate(rows)

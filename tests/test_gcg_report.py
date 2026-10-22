@@ -1,7 +1,3 @@
-"""GCG reporting on synthetic transcripts: wall time on resume, sensitivity rows, technical
-failures, the paired McNemar test and the per-host table."""
-from __future__ import annotations
-
 import json
 from pathlib import Path
 
@@ -21,7 +17,7 @@ def _lab(wf: str, sw: bool = False, rf: str | None = None) -> dict:
 
 def _rec(i: int, checks: list[dict], wall: float = 10.0, tech: bool = False,
          error: str | None = None) -> dict:
-    # a per-host record shaped like gcg.attack_host or the technical-failure record
+    # per-host record as written by gcg.attack_host
     first = {k: next((c["step"] for c in checks if c["labels"][k] in ("obeyed", True)), None)
              for k in ("wf", "rf", "starts_with")}
     return {"key": f"hard-s0:{i}", "config_hash": "h", "host_index": i, "witness": "HIJACKED",
@@ -34,7 +30,7 @@ def _tech(i: int, error: str = "OutOfMemoryError: CUDA") -> dict:
     return _rec(i, [], wall=0.0, tech=True, error=error)
 
 
-# ----------------------------------------------------------------------------- wall time
+# wall time
 def test_wall_seconds_sums_the_records() -> None:
     s = run.summarize([_rec(0, [], wall=100.0), _rec(1, [], wall=200.5), _tech(2)], 12.34)
     assert s["wall_seconds"] == 300.5
@@ -60,7 +56,7 @@ def test_resumed_run_reports_its_total_wall(tmp_path: Path, monkeypatch) -> None
     assert on_disk["wall_seconds"] == 250.0
 
 
-# ----------------------------------------------------------------------------- rp1 rows
+# rp1 rows
 def test_rp1_rows_are_separate_from_the_primary() -> None:
     recs = [
         _rec(0, [{"step": 1, "labels": _lab("obeyed", sw=True)}]),  # primary success, no rp1
@@ -73,7 +69,7 @@ def test_rp1_rows_are_separate_from_the_primary() -> None:
     s = run.summarize(recs, 0.0)
     assert [s[k]["k"] for k in ("witness_first", "refusal_first_obeyed", "starts_with_witness")] \
         == [1, 1, 1]
-    assert s["rp1_witness_first"]["k"] == 2  # hosts 1 and 2, never merged into witness_first
+    assert s["rp1_witness_first"]["k"] == 2  # hosts 1 and 2, not merged
     assert s["rp1_refusal_first_obeyed"]["k"] == 1  # host 2 is rf 'refused'
     assert s["rp1_starts_with_witness"]["k"] == 1
     assert all(s[f"rp1_{r}"]["n"] == 5 for r in run.ROWS)
@@ -91,7 +87,7 @@ def test_primary_rows_match_the_first_step_labels() -> None:
     assert rec["first_step"] == {"wf": 1, "rf": 20, "starts_with": 20}
 
 
-# ----------------------------------------------------------------------------- technical failures
+# technical failures
 def test_technical_failure_hosts_are_listed_and_count_as_failures() -> None:
     recs = [_tech(3, "RuntimeError: x"), _rec(0, [{"step": 1, "labels": _lab("obeyed")}]),
             _tech(1)]
@@ -108,7 +104,7 @@ def test_clean_run_has_no_technical_failure_hosts() -> None:
     assert s["technical_failures"] == 0 and s["technical_failure_hosts"] == []
 
 
-# ----------------------------------------------------------------------------- paired McNemar
+# paired McNemar
 def _run_dir(root: Path, name: str, tag: str, wins: set[int], n: int = 6,
              skip: set[int] = frozenset(), tech: set[int] = frozenset(),
              cfg: dict | None = None, data_sha: dict[int, str] | None = None,
@@ -203,7 +199,7 @@ def test_mcnemar_relative_paths_resolve_under_runs(tmp_path: Path, monkeypatch) 
     assert not (tmp_path / "hard" / "rep").exists()
 
 
-# ----------------------------------------------------------------------------- per-host table
+# per-host table
 def _ht_rec(i: int, wf: int | None, sw: int | None, tf: bool = False) -> dict:
     return {"host_index": i, "technical_failure": tf,
             "first_step": {"wf": wf, "rf": wf, "starts_with": sw}}

@@ -1,12 +1,3 @@
-"""Inputs of every experiment: AlpacaDataCleaned, the IFEval prompts and SQuAD v1.1 dev,
-downloaded into data/ from pinned sources with their sha256 checked, and the Tensor Trust texts
-(not shipped) of data/human_attacks/pool_<lang>.jsonl, restored from the pinned dump.
-
---force also replaces a downloaded file whose sha256 differs; --dump PATH reads a local copy of
-raw_dump_attacks.jsonl.bz2 instead of downloading the Tensor Trust dump.
-"""
-from __future__ import annotations
-
 import argparse
 import bz2
 import hashlib
@@ -19,8 +10,8 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # runs without installing
 
-from ipidefense.paths import DATA  # noqa: E402
-from ipidefense.runner import Run, Step, main, shown, user_path  # noqa: E402
+from ipidefense.paths import DATA
+from ipidefense.runner import Run, Step, main, shown, user_path
 
 # file name under DATA -> (pinned URL, sha256)
 FILES: dict[str, tuple[str, str]] = {
@@ -78,7 +69,7 @@ DUMP = "raw-data/v2/raw_dump_attacks.jsonl.bz2"
 DUMP_SHA256 = "87853cc8065a22156d15c4bdec777a8d35758749beb79769147d63a9644a73ce"
 POOLS = DATA / "human_attacks"
 SOURCES = POOLS / "sources" / "tensor_trust"
-# sha1 of each complete pool, one json.dumps(record, ensure_ascii=False) per line
+# sha1 of each pool, one json.dumps(record, ensure_ascii=False) per line
 POOL_SHA1 = {"en": "0360b21a6852de3df6fa6f9f97318baf9166734c",
              "ru": "8f7f8f3cb98982d8d3e832ee9f4e5c40037e091c",
              "zh": "2fe3425f1931c53c4a52ef3742d7c48798a43ac9",
@@ -100,7 +91,7 @@ def file_sha256(path: Path) -> str:
 
 
 def adapt(text: str) -> str:
-    """The single target match replaced by {witness}, literal braces doubled (common.adapt)."""
+    """Replace the single target match by {witness} and double literal braces."""
     (m,) = TARGET.finditer(text)
     head, tail = text[: m.start()], text[m.end():]
     return head.replace("{", "{{").replace("}", "}}") + PLACEHOLDER + tail.replace(
@@ -108,7 +99,7 @@ def adapt(text: str) -> str:
 
 
 def fetch_dump() -> Path:
-    """The raw attack dump at REVISION (public dataset: no token is sent)."""
+    """Download the raw attack dump at REVISION (public, no token sent)."""
     from huggingface_hub import hf_hub_download
 
     return Path(hf_hub_download(REPO_ID, DUMP, repo_type="dataset", revision=REVISION,
@@ -121,7 +112,7 @@ def read_pool(lang: str) -> list[dict]:
 
 
 def dump_texts(path: Path, ids: set[str]) -> dict[str, str]:
-    """attack_id -> attacker input for the wanted ids (untrusted file: bz2 + json only)."""
+    """attack_id -> attacker input for the wanted ids (untrusted bz2 json)."""
     out = {}
     with bz2.open(path, "rt", encoding="utf-8") as fh:
         for line in fh:
@@ -132,7 +123,7 @@ def dump_texts(path: Path, ids: set[str]) -> dict[str, str]:
 
 
 def restore(lang: str, recs: list[dict], texts: dict[str, str]) -> str:
-    """The pool text with every withheld record filled in; refuses any mismatch."""
+    """Pool text with withheld records filled in, refusing any mismatch."""
     for rec in recs:
         if "text_sha1" not in rec:
             continue
@@ -192,4 +183,4 @@ STEPS = [
 
 
 if __name__ == "__main__":
-    main(__file__, __doc__, STEPS, options)
+    main(__file__, STEPS, options)

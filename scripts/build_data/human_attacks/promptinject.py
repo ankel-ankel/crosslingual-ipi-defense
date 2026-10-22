@@ -1,7 +1,3 @@
-"""PromptInject goal-hijacking templates (author-written), parsed as text from prompt_data.py
-(never executed)."""
-from __future__ import annotations
-
 import re
 from pathlib import Path
 

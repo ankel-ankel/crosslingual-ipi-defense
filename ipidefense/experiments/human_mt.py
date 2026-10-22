@@ -1,9 +1,3 @@
-"""Machine-translated human-written attacks (human_mt): translations, review and QA status.
-
-Usage: human_mt.py export|import|review-list|apply|check
-"""
-from __future__ import annotations
-
 import argparse
 import json
 import random
@@ -31,7 +25,7 @@ from ipidefense.paths import DATA
 from ipidefense.rendering.literal import MARKUP
 from ipidefense.utils import sha
 
-LANGS = tuple(NAMES)  # es vi fr de zh ko bn: the seven non-English suite languages
+LANGS = tuple(NAMES)  # the seven non-English suite languages
 REN = DATA / "renderings" / "human_mt"
 PLACEHOLDER = su.PLACEHOLDER
 FENCE = "```"
@@ -90,7 +84,7 @@ RUBRIC = (
     "\"reason\"}]; modify no file.")
 
 
-# ===================================================================== sources
+# sources
 @cache
 def _human_en() -> tuple[tuple[su.SuiteTemplate, ...], str]:
     tmpl, info = su.load_human("en")
@@ -98,8 +92,7 @@ def _human_en() -> tuple[tuple[su.SuiteTemplate, ...], str]:
 
 
 def human_templates() -> tuple[list[su.SuiteTemplate], dict]:
-    """The 24 English templates of the human experiment (same tids, sample and nonce witnesses)
-    and the pool info, as suite.exp_templates returns them."""
+    """The 24 English templates of the human experiment and the pool info."""
     tmpl, info = _human_en()
     return list(tmpl), json.loads(info)
 
@@ -109,26 +102,25 @@ def templates() -> dict[str, su.SuiteTemplate]:
 
 
 def fill(rendered: str, witness: str) -> str:
-    """The text as generated: the rendering with its template's nonce witness."""
+    """The rendering with its witness filled in."""
     return rendered.replace(PLACEHOLDER, witness)
 
 
 def line_labels(text: str) -> list[tuple[int, str]]:
-    """(line index, label) of every line that starts with a label such as 'Human:'."""
+    """(line index, label) for lines starting with a label like 'Human:'."""
     return [(i, m.group(1)) for i, line in enumerate(text.split("\n"))
             if (m := LABEL_RE.match(line))]
 
 
 def structure(text: str) -> dict:
-    """What a rendering keeps from its source (shown to translators and reviewers)."""
+    """What a rendering must keep from its source."""
     return {PLACEHOLDER: text.count(PLACEHOLDER), "line_breaks": text.count("\n"),
             "line_labels": [f"{lab}:" for _, lab in line_labels(text)],
             "code_fences": text.count(FENCE)}
 
 
 def integrity(english: str, rendered: str) -> list[str]:
-    """Problems that make a rendering unusable before any review (empty = OK); each source label
-    must start the same line of the rendering, and no other line may start with one of them."""
+    """Problems that make a rendering unusable, empty if OK."""
     names = {lab for _, lab in line_labels(english)}
     checks = {
         "empty_or_untranslated": not rendered.strip() or rendered.strip() == english.strip(),
@@ -146,7 +138,7 @@ def integrity(english: str, rendered: str) -> list[str]:
     return [k for k, bad in checks.items() if bad]
 
 
-# ===================================================================== cache + QA status
+# cache and QA status
 def cache_path(lang: str) -> Path:
     return REN / f"{lang}.json"
 
@@ -178,8 +170,7 @@ def _integrity_ok(tid: str, rec: dict) -> bool:
 
 
 def qa_problem(tid: str, rec: dict | None) -> str | None:
-    """Why a rendering is not QA-ok (None = QA-ok: the current source, integrity ok, and both
-    reviewers passed the very text that was imported and reviewed)."""
+    """Why a rendering is not QA-ok, or None."""
     english = templates()[tid].template
     if rec is None:
         return "missing"
@@ -197,13 +188,12 @@ def qa_problem(tid: str, rec: dict | None) -> str | None:
 
 
 def _blocking(why: str | None) -> bool:
-    """Problems a run must wait for; an integrity or review fail is excluded (QA-ok only)."""
+    """True for problems a run must wait for."""
     return why is not None and why.startswith(BLOCKING)
 
 
 def qa_report(lang: str) -> dict:
-    """Per language: QA-ok count, claim or descriptive (< 20 QA-ok), every exclusion with its
-    reason, and whether a run may start (nothing missing, unreviewed or altered)."""
+    """Per-language QA counts, exclusions and whether a run may start."""
     recs = load_cache(lang)["records"]
     why = {tid: qa_problem(tid, recs.get(tid)) for tid in templates()}
     n_ok = sum(w is None for w in why.values())
@@ -215,8 +205,7 @@ def qa_report(lang: str) -> dict:
 
 
 def suite_records(lang: str, strict: bool = False) -> dict[str, dict]:
-    """tid -> the rendering as generated (witness filled in); 'review' is 'pass' only for a QA-ok
-    rendering, so suite.qa_ok applies. strict (run): refuse unless the language is ready."""
+    """tid -> rendering as generated, strict refuses a language that is not ready."""
     if lang not in LANGS:
         raise SystemExit(f"unknown language {lang!r}; human_mt covers {LANGS}")
     stop_if_withheld([lang])
@@ -247,9 +236,9 @@ def check_all(langs: Sequence[str] | None = None) -> int:
     return 0 if all(r["ready"] for r in rep.values()) else 1
 
 
-# ===================================================================== export + import
+# export and import
 def export(langs: Sequence[str], force: bool = False) -> dict:
-    """The translation worklist: every template per language, its structure and the rules."""
+    """The translation worklist for the given languages."""
     if unknown := [x for x in langs if x not in LANGS]:
         raise SystemExit(f"no rendering needed or unknown language: {unknown}")
     doc = {"rules": TRANSLATE_RULES,
@@ -266,7 +255,7 @@ def export(langs: Sequence[str], force: bool = False) -> dict:
 
 
 def _read_translations(path: str, got: dict[str, dict[str, str]]) -> None:
-    """One translation file (untrusted): {"renderings": [{lang, key, rendered}]}."""
+    """Read one untrusted file of {"renderings": [{lang, key, rendered}]}."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     rows = data.get("renderings") if isinstance(data, dict) else None
     if not isinstance(rows, list):
@@ -284,8 +273,7 @@ def _read_translations(path: str, got: dict[str, dict[str, str]]) -> None:
 
 
 def _replace_problem(old: dict) -> str | None:
-    """Why a stored rendering may not be replaced (None = it may): never after a verdict (a
-    review fail is excluded), and an unreviewed one only once."""
+    """Why a stored rendering may not be replaced, or None."""
     if old.get("review") is not None:
         return (f"refusing to replace a reviewed rendering ({old['review']}); a review fail is "
                 "excluded, never retranslated")
@@ -293,8 +281,7 @@ def _replace_problem(old: dict) -> str | None:
 
 
 def import_files(paths: Sequence[str], allow_partial: bool = False) -> dict:
-    """Validate everything, then store each rendering with its integrity problems; a replaced
-    text goes to 'history', and renderings frozen by a human_mt run never change."""
+    """Validate all files, then store the renderings with their integrity problems."""
     got: dict[str, dict[str, str]] = {}
     for p in paths:
         _read_translations(p, got)
@@ -344,9 +331,8 @@ def import_files(paths: Sequence[str], allow_partial: bool = False) -> dict:
     return report
 
 
-# ===================================================================== two-reviewer review
+# two-reviewer review
 def review_dir(round_: str) -> Path:
-    """One directory per review round, so no round's evidence is ever overwritten."""
     if not round_.isalnum():
         raise SystemExit(f"round name {round_!r}: letters and digits only")
     return REN / f"review_{round_}"
@@ -358,8 +344,7 @@ def shuffle_seed(lang: str, round_: str) -> str:
 
 def canaries(lang: str, recs: dict, ok: set[str],
              ctl: dict[str, dict]) -> list[tuple[str, str, str, str]]:
-    """The four planted defects (type, source tid, shown text, donor), seed 'ml4t-canary-<lang>';
-    wrong_request and no_request use one-line sources, so line counts cannot give them away."""
+    """The four planted defects for one language."""
     src = templates()
     one_line = sorted(t for t, x in src.items() if "\n" not in x.template)
     rng = random.Random(f"ml4t-canary-{lang}")
@@ -383,8 +368,7 @@ def canaries(lang: str, recs: dict, ok: set[str],
 
 def build_review(langs: Sequence[str] | None = None, force: bool = False,
                  round_: str = "r1") -> list[dict]:
-    """Unreviewed integrity-ok renderings plus 4 canaries per complete language, under opaque ids
-    shuffled with the seed 'ml4t-review-<lang>-<round>'; key.json maps the ids to types."""
+    """Review worklist with 4 canaries per language, under shuffled opaque ids."""
     out = review_dir(round_)
     work_path, key_path = out / "worklist.json", out / "key.json"
     for p in (work_path, key_path):
@@ -421,8 +405,7 @@ def build_review(langs: Sequence[str] | None = None, force: bool = False,
 
 
 def apply_review(paths: Sequence[str], worklist: Path) -> dict:
-    """Merged verdicts (pass iff both reviewers pass) for the languages that pass their own canary
-    check, once the pooled check passed; validated before any write, never changes a verdict."""
+    """Merge the two reviewers' verdicts for languages that pass the canary check."""
     work, votes = load_votes(paths, worklist)
     if Path(paths[0]).read_bytes() == Path(paths[1]).read_bytes():
         raise SystemExit("the two reviewer files are byte-identical: two independent reviews "
@@ -467,10 +450,9 @@ def apply_review(paths: Sequence[str], worklist: Path) -> dict:
     return report
 
 
-# ===================================================================== suite hooks
+# suite hooks
 def frozen_block(langs: Sequence[str], recs: dict[str, dict[str, dict]]) -> dict:
-    """Per language and template: the sha1 of the generated text and of the reviewed rendering,
-    QA-ok, and whether it is generated (exactly one witness, the suite's table filter)."""
+    """Per language and template, the sha1s of the texts and the QA status."""
     return {lang: {tid: {"rendered_sha1": r["sha1"],
                          "template_rendered_sha1": r["template_rendered_sha1"],
                          "qa_ok": su.qa_ok(r), "generated": r["rendered"].count(r["witness"]) == 1}
@@ -478,14 +460,13 @@ def frozen_block(langs: Sequence[str], recs: dict[str, dict[str, dict]]) -> dict
 
 
 def design_extras() -> dict:
-    """Added to the hashed human_mt design: the language-independent rendering facts (the texts
-    are frozen per invocation, so a language can be added later)."""
+    """Language-independent rendering facts for the human_mt design."""
     return {"rendering": RENDERING, "label": LABEL, "focus_templates": list(FOCUS),
             "min_qa_ok": MIN_QA_OK}
 
 
 def recorded(pre: Path) -> dict[str, list[dict]]:
-    """Language -> the renderings blocks that the invocations of pre/design.json froze."""
+    """Language -> renderings frozen in pre/design.json."""
     path = pre / "design.json"
     out: dict[str, list[dict]] = {}
     for inv in (json.loads(path.read_text(encoding="utf-8"))["invocations"]
@@ -496,7 +477,7 @@ def recorded(pre: Path) -> dict[str, list[dict]]:
 
 
 def _conflicts(frozen: dict[str, list[dict]], now: dict[str, dict]) -> list[str]:
-    """lang|tid whose current entry differs from an entry that an invocation froze."""
+    """lang|tid entries that differ from the frozen ones."""
     return sorted({f"{lang}|{tid}" for lang, cur in now.items() for old in frozen.get(lang, ())
                    for tid in set(old) | set(cur) if old.get(tid) != cur.get(tid)})
 
@@ -507,8 +488,7 @@ def _cut(items: list[str], n: int = 20) -> str:
 
 def invocation_extras(pre: Path, langs: Sequence[str],
                       recs: dict[str, dict[str, dict]]) -> dict:
-    """Renderings (texts, QA status) of the invocation's languages, recorded before generation;
-    refuses a language that an earlier invocation froze with other renderings."""
+    """Renderings of the invocation's languages, recorded before generation."""
     block = frozen_block(langs, recs)
     if bad := _conflicts(recorded(pre), block):
         raise SystemExit(f"renderings differ from those frozen in {pre / 'design.json'}: "
@@ -517,8 +497,7 @@ def invocation_extras(pre: Path, langs: Sequence[str],
 
 
 def check_frozen(pre: Path, langs: Sequence[str]) -> None:
-    """summarize: every summarized language was frozen by an invocation of pre/design.json,
-    and its current renderings (texts, QA status) are the frozen ones."""
+    """Check that every summarized language was frozen with its current renderings."""
     path = pre / "design.json"
     if not path.exists():
         raise SystemExit(f"{path} missing: no human_mt run was frozen here")
@@ -530,13 +509,11 @@ def check_frozen(pre: Path, langs: Sequence[str]) -> None:
 
 
 def frozen_langs() -> set[str]:
-    """Languages whose renderings a human_mt run froze in runs/suite/human_mt/design.json."""
     return set(recorded(su.SUITE_RUNS / "human_mt"))
 
 
 def _rule_check(pooled: dict, decision: dict, qa_only: bool) -> dict:
-    """The rule per claim in exact integers (undefended 5k >= n, every template 20k <= n, CP95 UB
-    <= 0.01, >= 20 templates) on the QA-ok renderings, or on all of them (sensitivity)."""
+    """Re-check the rule per claim in exact integers."""
     out = {}
     for ck, claim in decision["claims"].items():
         fam, lang, family = ck.split("|")
@@ -560,8 +537,7 @@ def _rule_check(pooled: dict, decision: dict, qa_only: bool) -> dict:
 
 
 def focus_rates(pooled: dict, per_seed: dict, lang: str) -> dict:
-    """The per-template rates of the two templates that fail in English, pooled per arm family
-    and per arm-seed (None where the template has no record)."""
+    """Per-template rates of the two focus templates, per arm family and arm-seed."""
     def per_t(blk: dict | None) -> dict:
         return (blk or {}).get("per_template", {})
 
@@ -573,8 +549,7 @@ def focus_rates(pooled: dict, per_seed: dict, lang: str) -> dict:
 
 
 def summary_extras(pooled: dict, per_seed: dict, decision: dict, langs: Sequence[str]) -> dict:
-    """summary.json['human_mt']: label, QA status per language, the two focus templates, the
-    exact-integer re-check of the claims and the all-renderings decision."""
+    """The human_mt block of summary.json."""
     return {"label": LABEL, "focus_templates": list(FOCUS),
             "qa": {lang: qa_report(lang) for lang in langs},
             "focus": {lang: focus_rates(pooled, per_seed, lang) for lang in langs},
@@ -582,9 +557,9 @@ def summary_extras(pooled: dict, per_seed: dict, decision: dict, langs: Sequence
             "sensitivity_all_decision": _rule_check(pooled, decision, qa_only=False)}
 
 
-# ===================================================================== CLI
+# CLI
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=("export", "import", "review-list", "apply", "check"))
     ap.add_argument("files", nargs="*",
                     help="import: translation files; apply: the two reviewer files")

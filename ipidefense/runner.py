@@ -1,10 +1,3 @@
-"""Steps of the scripts under scripts/: command line, done markers, commands, files.
-
-Each experiment command runs in its own Python process, started from the repository root, so the
-GPU memory of one command is free before the next one starts.
-"""
-from __future__ import annotations
-
 import argparse
 import os
 import shutil
@@ -25,24 +18,23 @@ DONE = RUNS / ".done"  # one marker per finished step: .done/<script>/<step>
 class Step:
     name: str
     about: str  # one line for --list
-    paper: str  # tables and figures of the paper it produces
-    func: Callable[[Run], bool | None]  # returning False leaves the step unmarked
-    marker: bool = True  # False: the step skips finished work itself, from its outputs
+    paper: str  # outputs it produces, shown by --list
+    func: Callable[["Run"], bool | None]  # returning False leaves the step unmarked
+    marker: bool = True  # False: the step itself skips finished work
 
 
 def root_arg(var: str, default: str) -> str:
-    """IPI_DATA, IPI_MODELS or IPI_RUNS as written in command arguments; relative to the
-    repository root, like the default."""
+    """Env root as written in command arguments, relative to the repo root."""
     return os.environ.get(var) or default
 
 
 def user_path(text: str) -> Path:
-    """A path given on the command line, taken from the folder the script was started in."""
+    """A command-line path, relative to the folder the script was started in."""
     return Path(os.path.abspath(text))
 
 
 def shown(path: str | Path) -> str:
-    """A path as printed: relative to the repository root when it lies inside it."""
+    """Path for printing, relative to the repo root when inside it."""
     if isinstance(path, Path) and path.is_absolute():
         try:
             return path.relative_to(ROOT).as_posix()
@@ -52,7 +44,7 @@ def shown(path: str | Path) -> str:
 
 
 def command(module: str, args: Sequence[str]) -> str:
-    """A command as printed: the module file and its arguments."""
+    """Printable form of a command."""
     words = [module.replace(".", "/") + ".py", *args]
     return " ".join(w if w and not any(c.isspace() for c in w) else f'"{w}"' for w in words)
 
@@ -66,7 +58,7 @@ def _word(arg: object) -> str:
 
 
 class Run:
-    """The commands and file operations of a step; a dry run prints them and runs nothing."""
+    """Commands and file operations of a step. A dry run only prints them."""
 
     def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
@@ -83,13 +75,13 @@ class Run:
                                          **kwargs)
 
     def py(self, module: str, *args: str | int) -> None:
-        """Run an ipidefense module with these arguments; stop the script if it fails."""
+        """Run an ipidefense module, stop the script if it fails."""
         shown_cmd, done = self._start(module, args)
         if done is not None and done.returncode != 0:
             raise SystemExit(f"failed (exit {done.returncode}): {shown_cmd}")
 
     def ok(self, module: str, *args: str | int) -> bool:
-        """Run a check and say whether it passed (a dry run assumes it does)."""
+        """Run a check and return whether it passed (True in a dry run)."""
         _, done = self._start(module, args)
         if done is None:
             print("  (the rest of the step runs only if this check passes)", flush=True)
@@ -97,7 +89,7 @@ class Run:
         return done.returncode == 0
 
     def output(self, module: str, *args: str | int, dry: str = "") -> str:
-        """Run a module and return what it prints (a dry run returns `dry`)."""
+        """Run a module and return its stdout (`dry` in a dry run)."""
         shown_cmd, done = self._start(module, args, stdout=subprocess.PIPE, text=True)
         if done is None:
             return dry
@@ -119,8 +111,7 @@ class Run:
 
     @contextmanager
     def keep(self, out: str | Path, dst: str | Path) -> Iterator[None]:
-        """Around a command that writes `out` under a fixed name: store its output as `dst` and
-        put back the file that was at `out` (kept meanwhile as `out`.keep)."""
+        """Store the output written to `out` as `dst` and restore the old `out`."""
         kept = Path(f"{out}.keep") if isinstance(out, Path) else f"{out}.keep"
         had = os.path.exists(out)
         if self.dry_run:
@@ -155,12 +146,11 @@ def print_steps(script: str, steps: Sequence[Step]) -> None:
             print(f"  {'':<{width}}  paper: {s.paper}")
 
 
-def main(script_file: str, doc: str, steps: Sequence[Step],
+def main(script_file: str, steps: Sequence[Step],
          options: Callable[[argparse.ArgumentParser], None] | None = None) -> None:
-    """Command line of a script under scripts/: every step in order unless --only names some."""
+    """Run a script's steps, or only those named by --only."""
     script = Path(script_file).stem
-    ap = argparse.ArgumentParser(prog=Path(script_file).name, description=doc,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(prog=Path(script_file).name)
     ap.add_argument("--list", action="store_true",
                     help="list the steps and the tables and figures they produce")
     ap.add_argument("--only", nargs="+", metavar="STEP", help="run only these steps")
@@ -178,7 +168,7 @@ def main(script_file: str, doc: str, steps: Sequence[Step],
     unknown = [n for n in args.only or () if n not in by_name]
     if unknown:
         ap.error(f"unknown step {' '.join(unknown)} (steps: {' '.join(by_name)})")
-    os.chdir(ROOT)  # relative roots and outputs are read from the repository root
+    os.chdir(ROOT)  # relative paths are read from the repo root
     chosen = [by_name[n] for n in dict.fromkeys(args.only)] if args.only else list(steps)
     done = [s.name for s in chosen
             if s.marker and not args.force and marker(script, s.name).exists()]

@@ -1,8 +1,3 @@
-"""CPU tests of the rendering-review bookkeeping and of the QA exclusion in the suite decisions (a
-rendering is used only if both reviewers pass it, or it carries no hard QA flag and was not
-failed), the language plan and the whole-sentence translation import."""
-from __future__ import annotations
-
 import argparse
 import json
 from pathlib import Path
@@ -16,9 +11,9 @@ from ipidefense.experiments import suite as su
 from ipidefense.experiments import translations as lr
 
 
-# ------------------------------------------------------------------ suite decisions + QA
+# suite decisions and QA
 def _recs(arm: str, obey: dict[str, float], n: int = 150) -> list[dict]:
-    """Synthetic transcript records: template tid obeyed on round(rate * n) of n hosts."""
+    """Synthetic records, each template obeyed on round(rate * n) of n hosts."""
     fam = {t.tid: t.family for t in su.suite_templates()}
     out = []
     for tid, r in obey.items():
@@ -74,7 +69,7 @@ def test_family_with_no_qa_ok_template_cannot_pass() -> None:
 def test_landing_uses_qa_ok_renderings() -> None:
     core = _core()
     ok = {t: i >= 13 for i, t in enumerate(core)}  # 13 fail QA
-    # obeyed only on the failed renderings: all-renderings 0.5, QA-ok 0.0 -> does not land
+    # obeyed only on failed renderings, so the QA-ok rate is 0
     und = su.lang_block(_recs("undef", {t: (0.0 if ok[t] else 1.0) for t in core}), ok)
     d = su.decide_claims({"undef|xx": und}, ["xx"], None, {"xx": ok})
     assert d["lands"]["xx"] is False and und["all"]["wf_obey"]["rate"] == 0.5
@@ -101,7 +96,7 @@ def test_ml2_obey_excludes_failed_renderings() -> None:
     assert row["pass"] is False
 
 
-# ------------------------------------------------------------------ review bookkeeping
+# review bookkeeping
 def _cache(tids: list[str], hard: set[str], review: dict[str, str] | None = None) -> dict:
     review = review or {}
     return {"lang": "ko", "records": {t: {"tid": t, "family": "override", "english": f"say {t}",
@@ -113,7 +108,7 @@ def _cache(tids: list[str], hard: set[str], review: dict[str, str] | None = None
 
 @pytest.fixture()
 def ren(tmp_path, monkeypatch):
-    """The review module on a temp renderings dir; QA recomputation replaced by stored flags."""
+    """Review module on a temp dir, with stored QA flags."""
     monkeypatch.setattr(rl, "REN", tmp_path)
     monkeypatch.setattr(rl, "WORK", tmp_path / "review_worklist.json")
     monkeypatch.setattr(rl, "SUPP", tmp_path / "review_worklist_supp.json")
@@ -133,7 +128,7 @@ def test_supplement_covers_newly_flagged_and_tops_up_sample(ren: Path) -> None:
     first = json.loads(rl.WORK.read_text(encoding="utf-8"))
     assert {w["key"] for w in first if w["flagged"]} == {"T00", "T01"}
     assert sum(not w["flagged"] for w in first) == round(0.25 * 18)
-    # QA changes: T05 and T06 become flagged; one first-round random item is now flagged
+    # T05, T06 and one first-round random item become flagged
     first_random = sorted(w["key"] for w in first if not w["flagged"])
     newly = {"T05", "T06", first_random[0]}
     _write(ren, _cache(tids, hard={"T00", "T01"} | newly))
@@ -169,7 +164,7 @@ def test_check_and_apply(ren: Path) -> None:
     assert su.qa_ok(recs["A"]) and not su.qa_ok(recs["B"]) and su.qa_ok(recs["C"])
 
 
-# ------------------------------------------------------------------ language plan
+# language plan
 def _ml2(passing: set[str]) -> dict:
     langs = ("en", "ko", "ar", "th", "bn", "my", "km")
     return {"exp": "ml2", "decision": {"table": {x: {"pass": x in passing} for x in langs}}}
@@ -204,10 +199,10 @@ def test_trainpool_records_are_not_reviewed(ren: Path) -> None:
     rl.build_list()
     keys = {w["key"] for w in json.loads(rl.WORK.read_text(encoding="utf-8"))}
     assert "P" not in keys and "A" in keys
-    assert rl.check() == 1  # A is unreviewed; P never counts
+    assert rl.check() == 1  # A is unreviewed, P never counts
 
 
-# ------------------------------------------------------------------ llm renderer
+# llm renderer
 def test_llm_qa_ok_requires_review_pass() -> None:
     rec = {"rendered": "say ZORB", "english": "say ZORB", "witness": "ZORB",
            "method": "llm:claude-agent (whole-sentence translation)", "qa": {"hard": []}}
@@ -238,7 +233,7 @@ def test_llm_import_and_review_all(tmp_path: Path, monkeypatch) -> None:
     assert rep["ko"]["passed_integrity"] == len(tm) - 1 and tm[0].tid in rep["ko"]["integrity_fail"]
     cache = json.loads((tmp_path / "ko_llm.json").read_text(encoding="utf-8"))
     assert all(r["method"].startswith("llm:") for r in cache["records"].values())
-    # 100% review list and the strict check, through the review module on the same directory
+    # full review list and strict check via the review module
     monkeypatch.setattr(rl, "REN", tmp_path)
     monkeypatch.setattr(rl, "qa_language", lambda recs, lang: [
         r.setdefault("qa", {"hard": [], "review": []}) for r in recs.values()])
@@ -266,7 +261,7 @@ def test_language_plan_checks_renderer() -> None:
     assert mp.plan({**s, "renderer": "llm"}, "llm")[0][-1] == "bn"
 
 
-# ------------------------------------------------------------------ one design per renderer
+# one design per renderer
 @pytest.mark.skipif(not (paths.DATA / "alpaca_cleaned.json").exists(),
                     reason="run scripts/prepare_data.py")
 def test_ml1b_old_and_v2_share_out_dir(tmp_path: Path, monkeypatch) -> None:

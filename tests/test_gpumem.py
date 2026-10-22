@@ -1,7 +1,3 @@
-"""The post-prefill criterion never stops a sequence and releases the cache exactly once; without
-CUDA nothing is added to generate()."""
-from __future__ import annotations
-
 import torch
 
 from ipidefense import gpumem as gm

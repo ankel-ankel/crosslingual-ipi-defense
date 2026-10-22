@@ -1,10 +1,3 @@
-"""Training sets of the comparison arms: one SFT example or DPO pair per training host.
-
-Phases: render (NLLB wrapper translations), targets (frozen clean answers, unbatched), rejected
-(frozen answers to the injection alone), build (per-arm JSONL + manifest), parity (optional).
-"""
-from __future__ import annotations
-
 import argparse
 import functools
 import hashlib
@@ -66,7 +59,7 @@ NEEDS_REJECTED = frozenset({"b1", "b2"})
 GenFn = Callable[[list[Item]], list[dict]]
 
 
-# ----------------------------------------------------------------------------- utilities
+# utilities
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as fh:
@@ -98,7 +91,7 @@ def write_jsonl(path: Path, records: Iterable[dict]) -> None:
 
 
 def repair_tail(path: Path) -> None:
-    """Drop a final record truncated by a crash, so that appends start on a fresh line."""
+    """Drop a final record truncated by a crash."""
     if not path.exists():
         return
     raw = path.read_bytes()
@@ -140,10 +133,9 @@ def qwen_tokenizer() -> Any:
     return tok
 
 
-# ----------------------------------------------------------------------------- generation
+# generation
 def load_frozen(seed: int) -> tuple[Any, Any]:
-    """The frozen model as the defense builds it (seeded LoRA wrapper, eval mode); generate
-    inside model.disable_adapter()."""
+    """The frozen model as the defense builds it, generate under disable_adapter()."""
     from ipidefense.training.lora import build_lora_model
 
     torch.manual_seed(seed)
@@ -159,7 +151,7 @@ def eos_ids(model: Any, tok: Any) -> frozenset[int]:
 
 
 def gen_record(tok: Any, new_ids: list[int], mnt: int, eos: frozenset[int]) -> dict:
-    """Decoded text (as model.generate decodes it), content-token count, cap-hit flag."""
+    """Decoded text, content-token count and cap-hit flag."""
     stop = next((k for k, t in enumerate(new_ids) if t in eos), None)
     return {
         "text": tok.decode(new_ids, skip_special_tokens=True),
@@ -217,8 +209,7 @@ def run_generation(
     limit: int | None,
     label: str,
 ) -> dict:
-    """Resumable generation into an append-only transcript (one record per item key); the
-    model is only loaded (make_gen) when something is pending."""
+    """Resumable generation into an append-only transcript."""
     repair_tail(path)
     transcript = Transcript(path)
     todo = transcript.pending(items)
@@ -277,7 +268,7 @@ def _write_report(runs: Path, name: str, payload: dict) -> None:
     LOG.info("wrote %s", path)
 
 
-# ----------------------------------------------------------------------------- GPU phases
+# GPU phases
 def phase_render(
     langs: tuple[str, ...] = ("es", "vi"),
     cache: Path = RENDER_CACHE,
@@ -319,7 +310,7 @@ def phase_render(
 def phase_targets(
     seed: int, limit: int | None = None, root: Path = DATA_ROOT, runs: Path = RUNS_DIR
 ) -> dict:
-    """Frozen-model clean answers for the 1,500 training hosts, unbatched as in the defense."""
+    """Frozen-model clean answers for the 1,500 training hosts, unbatched."""
     t0 = time.time()
     hs = train_hosts(seed)
     items = [Item(f"h{i:04d}", h.instruction, h.data, {"host": i}) for i, h in enumerate(hs)]
@@ -361,7 +352,7 @@ def phase_rejected(
     runs: Path = RUNS_DIR,
     cache: Path = RENDER_CACHE,
 ) -> dict:
-    """Frozen-model greedy answers (<= 160 tokens) to each injection alone (b1, b2)."""
+    """Frozen-model answers to each injection alone (b1, b2)."""
     t0 = time.time()
     items = rejected_items(seed, CachedTranslator.load(cache))
     path = seed_dir(seed, root) / "rejected.jsonl"
@@ -400,7 +391,7 @@ def phase_rejected(
 
 
 def phase_parity(seed: int = 0, runs: Path = RUNS_DIR, cache: Path = RENDER_CACHE) -> dict:
-    """Undefended obey rates on the defense's eval hosts, unbatched, vs its training report."""
+    """Undefended obey rates on the defense's eval hosts, against its training report."""
     from ipidefense.attacks.witnesses import OutcomeClassifier
     from ipidefense.evaluation.obey import obey_by_lang
 
@@ -436,11 +427,10 @@ def phase_parity(seed: int = 0, runs: Path = RUNS_DIR, cache: Path = RENDER_CACH
     return report
 
 
-# ----------------------------------------------------------------------------- build (CPU)
+# build (CPU)
 @dataclass(frozen=True)
 class BuildCtx:
-    """skip: hosts with an empty frozen target, excluded from every arm (as in the defense);
-    missing: hosts without a frozen target yet (partial smoke builds only)."""
+    """Hosts to skip (empty target) and hosts still missing a target."""
 
     seed: int
     hosts: tuple[RefHost, ...]
@@ -562,7 +552,7 @@ def token_lengths(tok: Any, messages: list[dict], response: str) -> tuple[int, i
 
 
 def finalize(recs: list[dict], tok: Any, max_len: int = MAX_LEN) -> tuple[list[dict], dict]:
-    """Drop records left without a supervised token after truncation; length statistics."""
+    """Drop records with no supervised token left, plus length statistics."""
     kept, dropped, prompts, seqs = [], [], [], []
     for rec in recs:
         responses = [rec["target"]] if "target" in rec else [rec["chosen"], rec["rejected"]]
@@ -694,7 +684,7 @@ def phase_build(
     return manifest
 
 
-# ----------------------------------------------------------------------------- CLI
+# CLI
 def main(argv: list[str] | None = None) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     ap = argparse.ArgumentParser(description="Build the comparison-arm training sets.")

@@ -1,6 +1,3 @@
-"""Shared helpers of the human-written attack pools: adaptation, text screens and language ID."""
-from __future__ import annotations
-
 import re
 import unicodedata
 
@@ -20,7 +17,7 @@ ZERO_WIDTH = re.compile(r"[\u200b-\u200f\u2060-\u2064\ufeff\u00ad]")
 TRAIN_WITNESS = re.compile(r"\b(?:pwned|banana|hacked|clicked)\b", re.I)  # training witnesses
 WORD_COUNT = re.compile(r"\b(?:two|three|four|2|3|4)[- ]words?\b", re.I)
 EN_FUNC = frozenset(
-    "the a an and or of to in on for with is are be been was were this "  # noqa: SIM905
+    "the a an and or of to in on for with is are be been was were this "
     "that it you your i me my say print output write ignore above previous instructions "
     "instead just only following do not now please what will would should can from as at "
     "by all any".split()
@@ -33,8 +30,7 @@ def esc(s: str) -> str:
 
 
 def adapt(text: str, pattern: re.Pattern) -> dict:
-    """The single target-phrase match replaced by {witness}, round trip checked:
-    dict(ok, reason, adapted, matched, n_match, braces_escaped)."""
+    """Replace the single target-phrase match with {witness}, round trip checked."""
     ms = list(pattern.finditer(text))
     out = {"ok": False, "reason": "", "adapted": None, "matched": None, "n_match": len(ms),
            "braces_escaped": False}
@@ -63,7 +59,7 @@ def residual(text: str, pattern: re.Pattern) -> str:
 
 
 def quality_reason(text: str) -> str:
-    """Generic text filters; returns '' when the text passes."""
+    """Generic text filters, '' when the text passes."""
     if not MIN_LEN <= len(text) <= MAX_LEN:
         return "length"
     if CHAT_TOKENS.search(text):
@@ -83,7 +79,7 @@ def en_ratio(text: str) -> float:
 
 
 def lang_of(resid: str) -> dict:
-    """Seeded LID on the residual (target phrase removed) + English-function-word ratio."""
+    """Seeded LID and English function-word ratio of the residual."""
     r = identify(resid)
     r["en_ratio"] = round(en_ratio(resid), 3)
     return r

@@ -1,9 +1,3 @@
-"""Planted-defect check of the whole-sentence translation review.
-
-Usage: canary.py build | score A.json B.json
-"""
-from __future__ import annotations
-
 import argparse
 import json
 import random
@@ -22,8 +16,7 @@ CTL = "ctl-invoice"
 
 
 def build() -> dict:
-    """4 planted defects (wrong_request, no_request, added_content, untranslated) and 4 real
-    renderings per language, shuffled under opaque ids; key.json maps the ids to types."""
+    """Plant 4 defects and 4 real renderings per language under opaque ids."""
     tm = {t.tid: t for t in suite_templates()}
     fam = defaultdict(list)
     for t in tm.values():
@@ -64,8 +57,7 @@ def build() -> dict:
 
 
 def score(a_path: str, b_path: str) -> dict:
-    """Valid iff the merged verdict (pass only if both pass) fails >= 90% of all canaries and
-    >= 75% of each type, and passes >= 90% of the real items."""
+    """Check the merged canary verdicts against the validity thresholds."""
     key = json.loads((DIR / "key.json").read_text(encoding="utf-8"))
     votes = []
     for p in (a_path, b_path):
@@ -102,7 +94,7 @@ def score(a_path: str, b_path: str) -> dict:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("build")
     sc = sub.add_parser("score")

@@ -1,9 +1,3 @@
-"""Per-host first-success steps of the white-box GCG runs (LaTeX rows on stdout, a check on stderr).
-
-  gcg_table.py
-"""
-from __future__ import annotations
-
 import argparse
 import json
 import sys
@@ -30,7 +24,7 @@ SEED1 = (Column("Undefended", GCG / "hard_s1" / "undef.jsonl", 30),
 
 
 def load(col: Column) -> dict[int, dict] | None:
-    # host_index -> record, or None while the transcript is absent or incomplete
+    # host_index -> record, None if the transcript is incomplete
     if not col.path.exists():
         return None
     recs = {}
@@ -42,8 +36,7 @@ def load(col: Column) -> dict[int, dict] | None:
 
 
 def cell(rec: dict) -> str:
-    # "<first witness-first step>/<first begins-with step>"; "--" = not met, "TF" = technical
-    # failure (counted as an attack failure)
+    # "--" = not met, "TF" = technical failure
     if rec.get("technical_failure"):
         return "TF"
     fs = rec.get("first_step") or {}
@@ -51,8 +44,7 @@ def cell(rec: dict) -> str:
 
 
 def rows(cols: tuple[Column, ...]) -> tuple[list[str], dict]:
-    # a column without a complete transcript prints \PENDING{}; a host beyond a column's
-    # attacked range prints an empty cell
+    # incomplete columns print \PENDING{}
     data = {c.label: load(c) for c in cols}
     n = max(c.n_hosts for c in cols)
     out = []
@@ -78,7 +70,7 @@ def rows(cols: tuple[Column, ...]) -> tuple[list[str], dict]:
 
 
 def main() -> None:
-    argparse.ArgumentParser(description=__doc__).parse_args()
+    argparse.ArgumentParser().parse_args()
     for name, cols in (("seed-0 hosts", SEED0), ("seed-1 hosts", SEED1)):
         lines, check = rows(cols)
         print(f"% {name}: " + " & ".join(["Host"] + [c.label for c in cols]))

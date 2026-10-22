@@ -1,9 +1,3 @@
-"""Held-out injections at the start, middle and end of the host data (training used the end).
-
-position.py --lora-dir models/defense-qwen-seed0 --seed 0
-"""
-from __future__ import annotations
-
 import argparse
 import json
 

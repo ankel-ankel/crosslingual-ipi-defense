@@ -1,6 +1,3 @@
-"""Binomial bounds: one-sided Clopper-Pearson upper bound and Wilson interval."""
-from __future__ import annotations
-
 import math
 
 

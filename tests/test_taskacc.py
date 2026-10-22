@@ -1,7 +1,3 @@
-"""Task accuracy under attack: SQuAD metrics, units and scores, prepared items, the summary and
-the shared-token sensitivity."""
-from __future__ import annotations
-
 import argparse
 import json
 from pathlib import Path
@@ -78,7 +74,7 @@ def test_taskacc_summary(tmp_path) -> None:
     assert dec["preserved"] and not dec["loss_prevented"]  # McNemar p = 0.03 with 6 items
 
 
-# ----------------------------------------------------------------------------- shared tokens
+# shared tokens
 def _rec(idx: int, cond: str, decoy: str | None, gold: str, f1: float) -> dict:
     return {"ds": "squad", "cond": cond, "idx": idx, "golds": [gold], "decoy": decoy,
             "decoy_type": "in-context" if cond == "C2" else None, "em": f1, "f1": f1,
@@ -87,7 +83,7 @@ def _rec(idx: int, cond: str, decoy: str | None, gold: str, f1: float) -> dict:
 
 def _recs() -> dict:
     golds = ["Mughal emperors", "the Battle of Hastings", "1066"]
-    near = ["Timur", "Hastings Road", "AT&amp;T"]  # item 1 shares 'hastings'; items 0 and 2 do not
+    near = ["Timur", "Hastings Road", "AT&amp;T"]  # only item 1 shares 'hastings'
     recs = {(a, ds, c): [] for a in ("undef", "def-s0") for ds, cs in ta.CONDS.items()
             for c in cs}  # summarize() keys every condition, empty when not run
     for arm, f1 in (("undef", 1.0), ("def-s0", 1.0)):

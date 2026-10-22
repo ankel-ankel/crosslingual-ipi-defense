@@ -1,16 +1,3 @@
-"""Defense adapters, cross-lingual transfer and IFEval over seeds 0, 1 and 2, then the other
-evaluations of the defense: SEA-LION, the role-format, hardened and refusal adapters, Mistral,
-unseen attack styles, benign data channel, adaptive attack, controls, non-emission, injection
-position, response preservation and the case study.
-
-Run after prepare_data.py: it reads the downloaded inputs.
-
-The steps train, ifeval, transfer, seed0, sealion and inline skip every part whose output exists
-(delete it to run that part again) and summary always runs; the other steps are skipped once they
-have finished.
-"""
-from __future__ import annotations
-
 import json
 import statistics
 import sys
@@ -19,8 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # runs without installing
 
-from ipidefense.paths import MODELS, RUNS  # noqa: E402
-from ipidefense.runner import Run, Step, main, root_arg, shown  # noqa: E402
+from ipidefense.paths import MODELS, RUNS
+from ipidefense.runner import Run, Step, main, root_arg, shown
 
 TRAIN = "ipidefense.training.defense"
 UTILITY = "ipidefense.experiments.utility"
@@ -31,7 +18,7 @@ ADAPTIVE = "ipidefense.experiments.adaptive"
 CONTROLS = "ipidefense.experiments.controls"
 NONEMISSION = "ipidefense.experiments.nonemission"
 
-# settings of the paper
+# main settings
 SEEDS = [0, 1, 2]
 BASE = "qwen"
 N_TRAIN, N_EVAL = 1500, 150
@@ -39,13 +26,12 @@ IFEVAL_N = 541
 DC_N = 100
 EXP = RUNS / "experiment"
 
-# roots in the arguments of the steps from hardened on: IPI_MODELS and IPI_RUNS, else relative
-# to the repository root
+# model and run roots used in step arguments
 M = root_arg("IPI_MODELS", "models")
 R = root_arg("IPI_RUNS", "runs")
 
 
-# ============================================================ three seeds
+# three seeds
 def stat(xs: list[float]) -> dict:
     return {
         "mean": round(statistics.mean(xs), 4),
@@ -262,18 +248,17 @@ def write_summary(run: Run) -> None:
     print(bar, flush=True)
 
 
-# ============================================================ SEA-LION, role format
+# SEA-LION, role format
 SEALION = str(MODELS / "defense-sealion-seed0")
 
-# (output in RUNS that marks the part done, command, (file the command writes, name it is
-# stored under) or None)
+# (marker output in RUNS, command, (file written, stored name) or None)
 SEALION_PARTS = [
     ("train_sealion.json",
      [TRAIN, "--base", "sealion", "--seed", "0", "--batch", "16"], None),
     (
         "eval_transfer_sealion_seed0.json",
         [TRANSFER, "--base", "sealion", "--lora-dir", SEALION, "--seed", "0", "--batch", "32"],
-        # transfer writes eval_transfer_seed0.json, which holds the Qwen seed-0 result
+        # rename so it does not clash with the Qwen seed-0 output
         ("eval_transfer_seed0.json", "eval_transfer_sealion_seed0.json"),
     ),
     (
@@ -313,12 +298,8 @@ def parts(items: list) -> Callable[[Run], None]:
     return step
 
 
-# ============================================================ evaluations of the defense
-# Flags follow the arguments stored in the output files; a comment names the flags a file does
-# not store and explains a value given for one.
+# defense evaluations, flags follow the arguments stored in the outputs
 def hardened(run: Run) -> None:
-    # train_qwen-hardened.json stores base qwen, lr 1e-4, 1 epoch, clean_frac 0.6 and langs
-    # en,es,vi; the seed is in the adapter names. --batch is not stored.
     run.py(TRAIN, "--base", "qwen", "--seed", "0", "--harden")
     run.py(TRAIN, "--base", "qwen", "--seed", "1", "--harden")
     run.py(UTILITY, "--base", "qwen", "--model", "lora",
@@ -326,7 +307,6 @@ def hardened(run: Run) -> None:
 
 
 def refuse(run: Run) -> None:
-    # --batch is not stored
     run.py(TRAIN, "--base", "qwen", "--seed", "0", "--refuse")
     with run.keep(f"{R}/eval_transfer_seed0.json", f"{R}/eval_transfer_refuse.json"):
         run.py(TRANSFER, "--lora-dir", f"{M}/defense-qwen-seed0-refuse", "--seed", "0")
@@ -337,7 +317,7 @@ def refuse(run: Run) -> None:
 
 
 def mistral(run: Run) -> None:
-    # --batch is not stored; 16 is inferred from the run time, as used for SEA-LION
+    # batch 16 inferred from the run time, as for SEA-LION
     run.py(TRAIN, "--base", "mistral", "--inline", "--seed", "0", "--batch", "16")
     run.py(UTILITY, "--base", "mistral", "--model", "lora",
            "--lora-dir", f"{M}/defense-mistral-seed0-inline")
@@ -345,7 +325,7 @@ def mistral(run: Run) -> None:
 
 
 def styles(run: Run) -> None:
-    # seed 0 comes from step seed0; --batch is not stored
+    # seed 0 comes from step seed0
     run.copy(f"{R}/experiment/eval_robustness.json", f"{R}/eval_robustness_seed0.json")
     for k in (1, 2):
         with run.keep(f"{R}/eval_robustness.json", f"{R}/eval_robustness_seed{k}.json"):
@@ -362,8 +342,7 @@ def benign(run: Run) -> None:
 
 
 def adaptive(run: Run) -> None:
-    # --seed, --skip and --batch are not stored; the undefended rates of the two seed-0 runs are
-    # identical and those of the seed-1 run differ, so its hosts are those of seed 1
+    # the seed-1 run used the seed-1 hosts, judging by its undefended rates
     with run.keep(f"{R}/eval_adaptive.json", f"{R}/eval_adaptive_base.json"):
         run.py(ADAPTIVE, "--lora-dir", f"{M}/defense-qwen-seed0")
     with run.keep(f"{R}/eval_adaptive.json", f"{R}/eval_adaptive_hardened.json"):
@@ -373,8 +352,7 @@ def adaptive(run: Run) -> None:
 
 
 def controls(run: Run) -> None:
-    # unseen witnesses on 150 hosts at 256 tokens; unseen prefix wording on 100 hosts of the
-    # adaptive slice. --batch is not stored
+    # headline: unseen witnesses, prefix: unseen prefix wording
     run.py(CONTROLS, "--mode", "headline", "--adapter", f"{M}/defense-qwen-seed0",
            "--seed", "0", "--tag", "seed0")
     run.py(CONTROLS, "--mode", "headline", "--adapter", f"{M}/defense-qwen-seed1",
@@ -386,9 +364,7 @@ def controls(run: Run) -> None:
 
 
 def nonemission(run: Run) -> None:
-    # format hijacking on 150 hosts; answer substitution on the first 200 SQuAD questions with
-    # distant and in-passage decoys. --batch is not stored, nor --seed of the format runs (the
-    # adapter's seed is given)
+    # format hijacking, then answer substitution
     run.py(NONEMISSION, "--mode", "format", "--adapter", f"{M}/defense-qwen-seed0",
            "--seed", "0", "--tag", "seed0")
     run.py(NONEMISSION, "--mode", "format", "--adapter", f"{M}/defense-qwen-seed1",
@@ -401,13 +377,11 @@ def nonemission(run: Run) -> None:
 
 
 def position(run: Run) -> None:
-    # --batch is not stored
     run.py("ipidefense.experiments.position", "--lora-dir", f"{M}/defense-qwen-seed0",
            "--seed", "0")
 
 
 def preservation(run: Run) -> None:
-    # --batch is not stored
     run.py("ipidefense.experiments.preservation", "--lora-dir", f"{M}/defense-qwen-seed0",
            "--seed", "0")
 
@@ -457,4 +431,4 @@ STEPS = [
 
 
 if __name__ == "__main__":
-    main(__file__, __doc__, STEPS)
+    main(__file__, STEPS)

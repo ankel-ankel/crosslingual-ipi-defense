@@ -1,10 +1,3 @@
-"""SEA-LION and Mistral IFEval cost: target regeneration and census, cap-512 / cap-160 retraining,
-security checks through the suite, IFEval breakdown and decision.
-
-Usage: backbones.py targets|census|train|sec|breakdown|decide [--backbone BB]
-"""
-from __future__ import annotations
-
 import argparse
 import contextlib
 import json
@@ -97,23 +90,21 @@ LOG = logging.getLogger(__name__)
 
 OUT = RUNS / "backbones"
 DATA_DIR = DATA / "backbones"
-PUBLISHED_RUNS = RUNS  # unbatched utility.py reports of the published adapters
-IFEVAL_DIR = default_out(IFEVAL_BATCH)  # runs/ifeval_logged_b16, shared with the hardened adapters
+PUBLISHED_RUNS = RUNS  # unbatched utility.py runs of the released adapters
+IFEVAL_DIR = default_out(IFEVAL_BATCH)  # shared with the hardened runs
 QWEN_TARGETS = DATA / "baselines" / f"seed{SEED}" / "targets.jsonl"  # unbatched
 MODEL_DIRS = {"qwen": QWEN_DIR, "sealion": SEALION_DIR, "mistral": MISTRAL_DIR}
 
 
 def backbone_tokenizer(bb: str) -> Any:
-    """train.py's tokenizer: SEA-LION's with the Meta-SecAlign (Llama-3.1, input-role) template;
-    Mistral's own tokenizer and template (no input role)."""
+    """Tokenizer and chat template of a backbone, as in train.py."""
     from ipidefense.model import mistral_tokenizer, sealion_tokenizer
 
     return {"sealion": sealion_tokenizer, "mistral": mistral_tokenizer}[check_backbone(bb)]()
 
 
 def generation_settings(bb: str) -> dict:
-    """Decoding-relevant fields of a backbone's generation_config.json (model.generate uses
-    them: a repetition_penalty applies under greedy decoding too)."""
+    """Decoding fields of a backbone's generation_config.json."""
     cfg = json.loads((MODEL_DIRS[bb] / "generation_config.json").read_text(encoding="utf-8"))
     return {"repetition_penalty": cfg.get("repetition_penalty", 1.0),
             "eos_token_id": cfg.get("eos_token_id"),
@@ -126,13 +117,13 @@ def report_path(name: str, smoke: bool = False) -> Path:
     return OUT / ("smoke" if smoke else "") / name
 
 
-# ===================================================================== targets, GPU
+# targets (GPU)
 def targets_path(bb: str, cap: int, smoke: bool = False) -> Path:
     return DATA_DIR / bb / ("smoke" if smoke else "") / f"targets_cap{cap}.jsonl"
 
 
 def target_items(limit: int | None = None) -> list[Item]:
-    """The 1,500 seed-0 training hosts of train.py (first 1,500 of load_en_hosts(1650, seed))."""
+    """The 1,500 seed-0 training hosts used by train.py."""
     items = [Item(f"h{i:04d}", h.instruction, h.data, {"host": i})
              for i, h in enumerate(train_hosts(SEED))]
     return items[:limit] if limit else items
@@ -146,8 +137,7 @@ def chat_texts(tok: Any, items: Sequence[Item], inline: bool) -> dict[str, str]:
 
 def generate_targets(model: Any, tok: Any, texts: list[str], mnt: int,
                      eos: frozenset[int]) -> list[dict]:
-    """ipidefense.model.generate_batch (left padding, greedy, pad = EOS) on rendered chat texts,
-    also keeping the content token ids (their decode equals the text)."""
+    """generate_batch on chat texts, also keeping the content token ids."""
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
     side, tok.padding_side = tok.padding_side, "left"
@@ -169,8 +159,7 @@ def generate_targets(model: Any, tok: Any, texts: list[str], mnt: int,
 
 
 def load_frozen(bb: str) -> Any:
-    """The frozen backbone as train.py builds it (manual_seed, LoRA wrapper, eval mode);
-    targets are generated inside model.disable_adapter()."""
+    """Frozen backbone built as in train.py."""
     from ipidefense.training.lora import build_lora_model
 
     torch.manual_seed(SEED)
@@ -182,9 +171,7 @@ def load_frozen(bb: str) -> Any:
 def run_targets(path: Path, items: Sequence[Item], texts: dict[str, str],
                 make_gen: Callable[[], Callable[[list[str]], list[dict]]], batch: int,
                 mnt: int) -> dict:
-    """Resumable generation in fixed consecutive chunks of `batch` items, so every item keeps the
-    batch neighbours of train.py --batch even after a crash (a partly written chunk is generated
-    again whole and only its missing records are added). The model loads only when needed."""
+    """Resumable generation in fixed chunks of `batch` items."""
     repair_tail(path)
     tr = Transcript(path)
     for it in items:
@@ -217,8 +204,7 @@ def run_targets(path: Path, items: Sequence[Item], texts: dict[str, str],
 
 
 def cmd_targets(bb: str, cap: int, limit: int | None = None) -> dict:
-    """Frozen-base clean answers of the 1,500 seed-0 training hosts (`limit`: smoke subset,
-    written under data/backbones/<bb>/smoke so it never mixes with the full run)."""
+    """Frozen-base clean answers for the training hosts (`limit` for a smoke run)."""
     smoke = limit is not None
     tok, inline = backbone_tokenizer(bb), BACKBONES[check_backbone(bb)][1]
     items = target_items(limit)
@@ -244,7 +230,7 @@ def cmd_targets(bb: str, cap: int, limit: int | None = None) -> dict:
     return report
 
 
-# ===================================================================== census, CPU
+# census (CPU)
 def load_complete(path: Path, n: int | None = None) -> dict[int, dict] | None:
     """Target records by host if the file holds every training host, else None."""
     n = N_TRAIN if n is None else n
@@ -255,8 +241,7 @@ def load_complete(path: Path, n: int | None = None) -> dict[int, dict] | None:
 
 
 def census(qwen_path: Path = QWEN_TARGETS, out: Path | None = None) -> dict:
-    """runs/backbones/census.json: every complete target set, missing sets listed (never
-    partial)."""
+    """Write runs/backbones/census.json from the complete target sets."""
     res: dict[str, Any] = {"definitions": CENSUS_DEFS,
                            "generation": {bb: generation_settings(bb) for bb in MODEL_DIRS},
                            "backbones": {}, "missing": [], "created": stamp()}
@@ -286,10 +271,9 @@ def census(qwen_path: Path = QWEN_TARGETS, out: Path | None = None) -> dict:
     return res
 
 
-# ===================================================================== build + train
+# build and train
 def load_targets(bb: str, cap: int, smoke: bool = False) -> tuple[dict[int, dict], Path]:
-    """Targets by host. Full runs need every host from this protocol (cap, batch 16) and a file
-    whose SHA-256 matches its targets report."""
+    """Targets by host, checked against the targets report."""
     path = targets_path(bb, cap, smoke)
     if not path.exists():
         raise SystemExit(f"{path} is missing: run `backbones.py targets --backbone {bb} "
@@ -311,9 +295,7 @@ def load_targets(bb: str, cap: int, smoke: bool = False) -> tuple[dict[int, dict
 
 def build_records(bb: str, cfg: str, targets: dict[int, dict], tr: Any,
                   partial: bool = False) -> list[dict]:
-    """The train.py mixture on this backbone's targets: plan_a0 draws (an empty target consumes
-    no draw), as-run rendering, build_messages with the backbone's inline flag, raw target text.
-    `partial` (smoke): hosts without a target are skipped like empty ones."""
+    """The train.py data mix on this backbone's targets."""
     hs = train_hosts(SEED)
     inline = BACKBONES[bb][1]
     missing = frozenset(i for i in range(len(hs)) if i not in targets)
@@ -334,8 +316,7 @@ def build_records(bb: str, cfg: str, targets: dict[int, dict], tr: Any,
 
 
 def as_run_translator() -> tuple[Any, dict]:
-    """The as-run NLLB rendering (render cache in data/baselines), re-audited against the original
-    renderer's strings (runs/render_audit.json) before every build."""
+    """The NLLB rendering used for training, re-audited before every build."""
     tr = CachedTranslator.load(RENDER_CACHE)
     audit = audit_render(tr)
     if not audit.get("available") or audit.get("n_mismatch"):
@@ -353,7 +334,7 @@ def cmd_train(args: argparse.Namespace) -> dict:
         raise SystemExit("--smoke / --limit runs need a run name starting with 'smoke'")
     if not smoke and run_name != backbone_adapter_dir(bb, cfg).name:
         raise SystemExit(f"a full run must write {backbone_adapter_dir(bb, cfg)} (registry)")
-    # never over an existing adapter; checked first so a used name fails fast
+    # fail fast if the adapter name is taken
     out = None if args.dry_run else adapter_dir(run_name, args.overwrite)
     started, t_start = stamp(), time.time()
     targets, tpath = load_targets(bb, int(spec["cap"]), args.smoke)
@@ -390,11 +371,11 @@ def cmd_train(args: argparse.Namespace) -> dict:
     from ipidefense.training.lora import build_lora_model, train_sft
 
     t0 = time.time()
-    torch.manual_seed(SEED)  # train.py seeds before building the LoRA model
+    torch.manual_seed(SEED)  # same seeding as train.py
     model = build_lora_model(str(MODEL_DIRS[bb]))
     t1 = time.time()
     tee = LossTee(sys.stdout)
-    with contextlib.redirect_stdout(tee):  # log_every only changes printing (smoke: few steps)
+    with contextlib.redirect_stdout(tee):  # log_every only affects printing
         train_sft(model, tok, examples, epochs=1, lr=spec["lr"], accum=8, max_len=MAX_LEN,
                   log_every=1 if smoke else 10, seed=SEED)
     t2 = time.time()
@@ -414,14 +395,14 @@ def cmd_train(args: argparse.Namespace) -> dict:
     return report
 
 
-# ===================================================================== security, GPU
+# security (GPU)
 def suite_dir(bb: str) -> Path:
     return OUT / f"suite_{bb}"
 
 
 def suite_args(bb: str, arms: Sequence[str], langs: Sequence[str],
                limit_hosts: int = 0) -> argparse.Namespace:
-    """suite `run --exp ml1b --renderer v2` arguments (the ml1b security protocol)."""
+    """Arguments for suite run --exp ml1b --renderer v2."""
     return argparse.Namespace(cmd="run", exp="ml1b", renderer="v2", arms=list(arms),
                               seeds=[SEED], langs=list(langs), batch=SEC_BATCH, mnt=SEC_MNT,
                               limit_hosts=limit_hosts, out_dir=str(suite_dir(bb)),
@@ -429,7 +410,7 @@ def suite_args(bb: str, arms: Sequence[str], langs: Sequence[str],
 
 
 def require_adapters(arms: Sequence[str]) -> None:
-    """Fail before any GPU load if an adapter is missing or was trained on another backbone."""
+    """Fail early if an adapter is missing or from another backbone."""
     for name in arms:
         adir = ADAPTERS[name][1]
         if adir and not (MODELS / adir / "adapter_model.safetensors").exists():
@@ -439,8 +420,7 @@ def require_adapters(arms: Sequence[str]) -> None:
 
 def sec_plan(bb: str, six: bool, arms: Sequence[str] | None = None,
              best: str | None = None) -> tuple[list[str], tuple[str, ...]]:
-    """(arms, langs) of a security run: en/es/vi for undef, published and both configs; --six:
-    the undefended backbone and the best config (`best`) in 6 languages; or explicit arms."""
+    """(arms, langs) of a security run."""
     langs = SIX_LANGS if six else SEC_LANGS
     if arms:
         other = [a for a in arms if ADAPTERS.get(a, ("",))[0] != bb]
@@ -472,8 +452,7 @@ def cmd_sec(bb: str, six: bool, arms: Sequence[str] | None = None, limit_hosts: 
 
 
 def valid_tids(lang: str) -> list[str] | None:
-    """EVAL_INJS templates whose v2 rendering keeps its witness (suite.run_exp's filter);
-    None if a rendering is not cached yet."""
+    """EVAL_INJS templates whose v2 rendering keeps the witness, None if not cached."""
     recs = su.load_renderings(lang, "v2")
     tmpl, _ = su.exp_templates("ml1b", lang)
     if any(t.tid not in recs for t in tmpl):
@@ -483,8 +462,7 @@ def valid_tids(lang: str) -> list[str] | None:
 
 def security_cell(bb: str, name: str, langs: Sequence[str],
                   out: Path | None = None) -> dict | None:
-    """Per-language witness-first / refusal-first obey counts of one arm from its suite
-    transcript; None unless every expected record (valid template x 150 hosts) is present."""
+    """Per-language obey counts of one arm, None if records are missing."""
     path = su.transcript_path(out or suite_dir(bb), parse_arm(name), SEED, "ml1b", "v2")
     recs = su.read_records(path)
     cell = {}
@@ -503,7 +481,7 @@ def security_cell(bb: str, name: str, langs: Sequence[str],
     return cell
 
 
-# ===================================================================== IFEval, CPU
+# IFEval (CPU)
 def load_ifeval_records(name: str, directory: Path = IFEVAL_DIR) -> dict[int, dict] | None:
     """All 541 logged records of one arm (batch 16, 512 tokens), else None."""
     path = directory / f"{name}.jsonl"
@@ -534,15 +512,14 @@ def ifeval_counts(name: str, directory: Path = IFEVAL_DIR) -> dict | None:
 
 
 def with_tax_ci(row: dict, undef: dict, ife: dict) -> dict:
-    """A rule row plus its descriptive tax CI and borderline flag (never used by the rule)."""
+    """A rule row plus its tax CI and borderline flag."""
     ci = tax_ci95(undef["per_prompt"], ife["per_prompt"])
     return {**row, "tax_ci95_descriptive": ci, "borderline": borderline(ci)}
 
 
 def cmd_breakdown(n_boot: int = 10_000, directory: Path = IFEVAL_DIR,
                   out: Path = OUT) -> dict[str, str]:
-    """IFEval breakdown (ifeval_breakdown.analyze) of every complete defended backbone arm
-    against its undefended backbone."""
+    """IFEval breakdown of each defended backbone arm against its undefended base."""
     labels = json.loads(bd.LABELS.read_text(encoding="utf-8"))["labels"]
     status = {}
     for bb in BACKBONES:
@@ -566,10 +543,10 @@ def cmd_breakdown(n_boot: int = 10_000, directory: Path = IFEVAL_DIR,
     return status
 
 
-# ===================================================================== decide, CPU
+# decide (CPU)
 def backbone_results(bb: str, ifeval_dir: Path = IFEVAL_DIR,
                      suite: Path | None = None) -> dict:
-    """Rule inputs of one backbone: rows of cfg-A/cfg-B, or None with the missing inputs."""
+    """Rule inputs of one backbone, or None with the missing inputs."""
     kinds = ("undef", "def", *BACKBONE_CONFIGS)
     ife = {k: ifeval_counts(arm(bb, k), ifeval_dir) for k in kinds}
     sec = {k: security_cell(bb, arm(bb, k), SEC_LANGS, suite) for k in kinds}
@@ -582,7 +559,7 @@ def backbone_results(bb: str, ifeval_dir: Path = IFEVAL_DIR,
 
 
 def published_reference(bb: str, ife: dict) -> dict:
-    """The published (unbatched utility.py) tax and its batched re-measurement."""
+    """Unbatched utility.py tax and its batched re-measurement."""
     pub = PUBLISHED_RUNS
     u = json.loads((pub / f"eval_utility_{bb}_undefended.json").read_text(encoding="utf-8"))
     d = json.loads((pub / f"eval_utility_{bb}_lora_{BACKBONES[bb][0]}.json")
@@ -603,7 +580,7 @@ def _read_json(path: Path) -> dict | None:
 
 def descriptive(bb: str, rows: dict | None, res: dict, suite: Path | None,
                 runs: Path) -> dict:
-    """Published-adapter sensitivity, six-language check, census and breakdown summaries."""
+    """Sensitivity, six-language, census and breakdown summaries."""
     out: dict[str, Any] = {}
     pub_sec, ife = res["security"]["def"], res["ifeval"]
     if rows is not None and ife["def"] and pub_sec:
@@ -636,8 +613,7 @@ def descriptive(bb: str, rows: dict | None, res: dict, suite: Path | None,
 
 def decide(ifeval_dir: Path = IFEVAL_DIR, runs: Path = OUT,
            suites: dict[str, Path] | None = None) -> dict:
-    """runs/backbones/decision.json: the decision rule per backbone ('pending' until every input
-    exists)."""
+    """Write runs/backbones/decision.json, 'pending' until every input exists."""
     result: dict[str, Any] = {"rules": RULES, "operational": OPERATIONAL, "backbones": {},
                               "created": stamp()}
     for bb in BACKBONES:
@@ -657,10 +633,10 @@ def decide(ifeval_dir: Path = IFEVAL_DIR, runs: Path = OUT,
     return result
 
 
-# ===================================================================== CLI
+# CLI
 def main(argv: list[str] | None = None) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     p_t = sub.add_parser("targets", help="GPU: frozen-base clean answers (batched as run)")
     p_t.add_argument("--backbone", choices=sorted(BACKBONES), required=True)

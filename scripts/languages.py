@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 
@@ -21,8 +19,7 @@ def render_audit(run: Run) -> None:
 
 
 def reviews(run: Run) -> None:
-    # to rebuild the translations: suite.py render, translations.py export / import,
-    # review.py list / apply, canary.py build
+    # to rebuild: suite.py render, translations.py, review.py and canary.py
     run.py(REVIEW, "check", "--renderer", "llm",
            "--langs", "ko", "ar", "th", "bn", "my", "km", "es", "vi", "fr", "de", "zh")
     run.py(REVIEW, "report", "--worklist", f"{DATA}/renderings/llm/review_worklist_all.json",
@@ -65,18 +62,17 @@ def suite(run: Run) -> None:
 
 
 def human(run: Run) -> None:
-    # needs the Tensor Trust texts (prepare_data.py); run also writes the summary
+    # needs the Tensor Trust texts from prepare_data.py
     run.py(SUITE, "run", "--exp", "human", "--langs", "en", "ru", "zh", "es", "--batch", "75")
 
 
 def hosts(run: Run) -> None:
-    # the hosts are shipped; translated_hosts.py prepare draws them again
+    # hosts are shipped, translated_hosts.py prepare can redraw them
     run.py("ipidefense.experiments.translated_hosts", "run")
 
 
 def human_mt(run: Run) -> bool:
-    # the translations of the Tensor Trust-derived templates are not shipped, so the check stops
-    # until they are supplied (human_mt.py export, import, review-list, apply)
+    # Tensor Trust translations are not shipped, so this check waits for them
     if not run.ok(HUMAN_MT, "check"):
         return False
     run.py(SUITE, "run", "--exp", "human_mt", "--langs", "es", "vi", "fr", "de", "zh", "ko",
@@ -107,4 +103,4 @@ STEPS = [
 
 
 if __name__ == "__main__":
-    main(__file__, __doc__, STEPS)
+    main(__file__, STEPS)

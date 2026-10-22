@@ -1,9 +1,3 @@
-"""IFEval with per-prompt logs (response, generated tokens, EOS flag, strict flags).
-
-Usage: ifeval_logged.py --arms undef def-s0 def-s1 def-s2 [--batch 16]
-"""
-from __future__ import annotations
-
 import argparse
 import contextlib
 import random
@@ -25,21 +19,20 @@ from ipidefense.model import (
 from ipidefense.paths import MODELS, RUNS
 from ipidefense.utils import Transcript, chunks, sha, write_json
 
-# Published IFEval counts (instructions of 834, prompts of 541) of the unbatched utility runs
+# reference IFEval counts of the unbatched runs (instructions, prompts)
 PUBLISHED = {"undef": (633, 366), "def-s0": (590, 331), "def-s1": (570, 313),
              "def-s2": (592, 327),
              "sealion-undef": (689, 412), "sealion-def-s0": (552, 303),
              "mistral-undef": (472, 248), "mistral-def-s0": (337, 158)}
-GATE_TOL = 2  # instructions and prompts; the scorer is stochastic for 2 prompts
+GATE_TOL = 2  # the scorer is random on 2 prompts
 RANDOM_LETTER_IDX = (19, 22)  # keywords:letter_frequency with a non-letter -> random letter
 N_LORA_MODULES = 196  # 28 layers x 7 projections
-# LoRA modules per backbone (all 7 projections per layer): Qwen 28 layers, Llama-3.1 / Mistral 32
 LORA_MODULES = {"qwen": N_LORA_MODULES, "sealion": 32 * 7, "mistral": 32 * 7}
 OUT = RUNS / "ifeval_logged"
 
 
 def default_out(batch: int) -> Path:
-    """Unbatched and batched transcripts never share a directory."""
+    """Separate dirs for batched and unbatched runs."""
     return OUT if batch <= 1 else RUNS / f"ifeval_logged_b{batch}"
 
 
@@ -51,7 +44,7 @@ def seed_scorer() -> None:
 
 
 def check_adapters(model, arms: list[str]) -> None:
-    """Fail fast if an adapter did not load (wrong keys would give a do-nothing adapter)."""
+    """Fail fast if an adapter did not load."""
     norms = {}
     for arm in arms:
         if not ADAPTERS[arm][1]:
@@ -66,7 +59,7 @@ def check_adapters(model, arms: list[str]) -> None:
 
 
 def load_base(base: str):
-    """The undefended backbone with its tokenizer and chat template (as load_base_undefended)."""
+    """Undefended backbone with its tokenizer and chat template."""
     if base == "qwen":
         return load_qwen_undefended()
     if base == "sealion":
@@ -77,7 +70,7 @@ def load_base(base: str):
 
 
 def load_model(arms: list[str]):
-    """One backbone with every requested adapter attached under its arm name."""
+    """Backbone with every requested adapter attached."""
     from peft import PeftModel
 
     backbone = arms_base(arms)
@@ -107,7 +100,7 @@ def load_model(arms: list[str]):
 
 @torch.no_grad()
 def gen_logged(model, tok, prompt: str, mnt: int) -> dict:
-    """Same call as ipidefense.model.generate, plus token-level metadata."""
+    """model.generate plus token-level metadata."""
     inputs = build_inputs(tok, prompt, None, False).to(model.device)
     out = model.generate(**inputs, max_new_tokens=mnt, do_sample=False,
                          pad_token_id=tok.eos_token_id, **lean_kwargs())
@@ -121,8 +114,7 @@ def gen_logged(model, tok, prompt: str, mnt: int) -> dict:
 
 @torch.no_grad()
 def gen_logged_batch(model, tok, prompts: list[str], mnt: int) -> list[dict]:
-    """Left-padded greedy batch (= ipidefense.model.generate_batch) with the same metadata;
-    pads after an EOS are EOS ids, so n_tokens is unaffected."""
+    """Left-padded greedy batch version of gen_logged."""
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
     side, tok.padding_side = tok.padding_side, "left"
@@ -167,7 +159,7 @@ def _record(arm: str, i: int, row: dict, mnt: int, g: dict, batch: int) -> dict:
 
 def _run_batched(model, tok, arm: str, rows: list[dict], mnt: int, tr: Transcript,
                  batch: int) -> None:
-    # batches start at fixed offsets, so a resumed run keeps each prompt's neighbours
+    # fixed batch offsets keep each prompt's neighbours on resume
     t0, n_new = time.time(), 0
     for chunk in chunks(list(range(len(rows))), batch):
         if all(f"{arm}:{i}" in tr.done for i in chunk):
@@ -183,7 +175,7 @@ def _run_batched(model, tok, arm: str, rows: list[dict], mnt: int, tr: Transcrip
 def run_arm(model, tok, arm: str, rows: list[dict], mnt: int, out: Path,
             batch: int = 1) -> dict:
     tr = Transcript(out / f"{arm}.jsonl")
-    for rec in tr.done.values():  # resume guard: never mix runs with different settings
+    for rec in tr.done.values():  # never mix runs with different settings
         assert (rec["mnt"] == mnt and rec["prompt_sha"] == sha(rows[rec["idx"]]["prompt"])
                 and rec.get("batch", 1) == batch), (
             f"{arm}: transcript {tr.path} was produced with different settings")
@@ -219,7 +211,7 @@ def summarize(arm: str, recs: list[dict], out: Path, batch: int = 1) -> dict:
     }
     if arm in PUBLISHED and len(recs) == 541:
         pi, pp = PUBLISHED[arm]
-        if batch > 1:  # published counts are unbatched: a difference is batch drift
+        if batch > 1:  # reference counts are unbatched, so a gap is batch drift
             summary["published_delta_informational"] = [n_inst - pi, n_prompt - pp]
         else:
             summary["reproduces_published"] = (abs(n_inst - pi) <= GATE_TOL
@@ -232,7 +224,7 @@ def summarize(arm: str, recs: list[dict], out: Path, batch: int = 1) -> dict:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("--arms", nargs="+", choices=list(ADAPTERS),
                     default=["undef", "def-s0", "def-s1", "def-s2"])
     ap.add_argument("--max-new-tokens", type=int, default=512)

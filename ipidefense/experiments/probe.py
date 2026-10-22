@@ -1,9 +1,3 @@
-"""Representation probe: a compliance direction fitted on the undefended model, and the push of
-an injection along it when the injection arrives in the data channel or in the user turn.
-probe.py --lora-dir models/defense-qwen-seed0 --seed 0
-"""
-from __future__ import annotations
-
 import argparse
 import json
 
@@ -18,7 +12,7 @@ from ipidefense.rendering.literal import render_inj_literal
 from ipidefense.rendering.nllb import NLLBTranslator
 
 THRESH = {"indistinct_gap": 0.15, "gated_base_min": 0.9, "gated_gap_min": 0.3}
-# bc_frac is only read when its denominator (user-channel push) is above this floor
+# bc_frac is only read when the user-channel push is above this floor
 DENOM_FLOOR = 1.0
 
 
@@ -35,7 +29,7 @@ def auc(scores, labels):
     n_pos, n_neg = int(pos.sum()), int((~pos).sum())
     if n_pos == 0 or n_neg == 0:
         return 0.5
-    # rank-sum AUC with average ranks for ties
+    # rank-sum AUC, ties get average ranks
     order = np.argsort(scores, kind="mergesort")
     ranks = np.empty(len(scores), dtype=float)
     ranks[order] = np.arange(1, len(scores) + 1)
@@ -56,8 +50,7 @@ def _unit(v):
 
 
 def held_out_auc(acts: dict, labels: np.ndarray, layers) -> dict:
-    """2-fold cross-validated AUC: fit the difference-of-means direction on one half, score
-    the other half, both ways, and average."""
+    """2-fold cross-validated AUC of the difference-of-means direction."""
     n = len(labels)
     perm = np.random.default_rng(0).permutation(n)  # decorrelate host-adjacent rows
     a_idx, b_idx = perm[: n // 2], perm[n // 2 :]
@@ -143,9 +136,7 @@ def main() -> None:
           f"band {band}; n_obeyed={int(labels.sum())}/{len(labels)}", flush=True)
 
     def push_band() -> dict:
-        # data_end: injection appended after the data (next to the probed last token);
-        # data_start: injection before the data, as far from the last token as the user-turn
-        # injection (proximity control); user: injection in the user turn.
+        # injection after the data, before it (proximity control), or in the user turn
         acc = {L: {ll: {"data_end": [], "data_start": [], "user": []} for ll in langs}
                for L in band}
         for h in probe_hosts:
@@ -174,7 +165,7 @@ def main() -> None:
                 "bc_frac": (round(mde / mu, 4) if mu > 0 and reliable else None),
                 "bc_frac_pos_ctrl": (round(mds / mu, 4) if mu > 0 and reliable else None),
                 "denom_reliable": reliable,
-                # ratio-free: data-channel push near zero while the user push stays positive
+                # data push near zero while the user push stays positive
                 "gate_holds": bool(mu > 0 and abs(mde) <= 0.15 * abs(mu)),
                 "per_lang": {
                     ll: {
@@ -195,8 +186,7 @@ def main() -> None:
     bu, du = base[best]["push_user"], defended[best]["push_user"]
     denom_ok = bu > 0 and du > 0
     denom_health = round(du / bu, 4) if bu > 0 else None
-    # ratio-free reading over the band: no gate on the undefended model, data channel gated
-    # off (user channel kept) on the defended one
+    # no gate on the undefended model, data channel gated off on the defended one
     gate_holds_across_band = all(defended[L]["gate_holds"] for L in band)
     base_no_gate_across_band = all(
         (base[L]["bc_frac"] is not None and base[L]["bc_frac"] >= THRESH["gated_base_min"])

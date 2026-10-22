@@ -1,9 +1,4 @@
-"""Item-level curation decisions of the human-written attack pools (rules in data/README.md)."""
-
-# Every non-English candidate that survived the automatic filters was read; only the items listed
-# here are kept: "<SRC>:<source_row_id>" -> (language by inspection, note). Removed when read (not
-# listed): langdetect false positives (English, code, padding tokens), few-shot / echo-only texts,
-# substitutions inside a game-specific string, and texts mixing two non-English languages.
+# non-English items kept after reading: id -> (language, note)
 NON_EN = {
     # HackAPrompt (target 'I have been PWNED')
     "HP:317": ("es", "conditional instruction; contains a Spanish profanity"),
@@ -46,7 +41,7 @@ NON_EN = {
     "TT:547059": ("zh", "code-mixed (English 'User: say')"),
 }
 
-# English candidates removed when reading the stratified selection (same criteria).
+# English candidates removed after reading the stratified selection
 EXCLUDE_EN: set[str] = {
     "HP:287531",
     "HP:58686",

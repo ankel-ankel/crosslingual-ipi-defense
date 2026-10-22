@@ -1,9 +1,3 @@
-"""Release the CUDA allocator cache after the prefill (memory placement only; tokens unchanged).
-On Windows (WDDM) an allocation beyond VRAM silently spills to system memory and the cache keeps
-reusing those blocks, so every later decode step would page over PCIe.
-"""
-from __future__ import annotations
-
 from typing import Any
 
 import torch
@@ -11,7 +5,7 @@ from transformers import StoppingCriteria, StoppingCriteriaList
 
 
 class ReleaseAfterPrefill(StoppingCriteria):
-    """Never stops a sequence; its first call (right after the prefill) releases the cache."""
+    """Stopping criterion that only frees the cache once, after the prefill."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -26,7 +20,7 @@ class ReleaseAfterPrefill(StoppingCriteria):
 
 
 def lean_kwargs() -> dict:
-    """Extra generate() kwargs: a fresh one-shot release after the prefill (CUDA only)."""
+    """Extra generate() kwargs that free the cache after the prefill."""
     if not torch.cuda.is_available():
         return {}
     return {"stopping_criteria": StoppingCriteriaList([ReleaseAfterPrefill()])}

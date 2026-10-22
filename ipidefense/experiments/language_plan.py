@@ -1,9 +1,3 @@
-"""Languages of the full suite (ml3) from the language-gate summary (ml2).
-
-Usage: language_plan.py [summary.json] [--renderer llm] -> MAIN / EXTRA lines
-"""
-from __future__ import annotations
-
 import argparse
 import json
 from pathlib import Path
@@ -15,8 +9,6 @@ SLOT_A, SLOT_B = ("ko", "ar", "th"), ("bn", "my", "km")
 DEFAULT = RUNS / "suite" / "ml2" / "summary.json"
 
 
-# First passer per slot (A: ko > ar > th, B: bn > my > km); with no slot-B passer the second
-# slot-A passer is added instead; up to 2 other passers become seed-0-only rows.
 def plan(summary: dict, renderer: str | None = None) -> tuple[list[str], list[str]]:
     """(ml3 languages, seed-0-only extra languages) from an ml2 summary."""
     if summary.get("exp") != "ml2":
@@ -35,7 +27,7 @@ def plan(summary: dict, renderer: str | None = None) -> tuple[list[str], list[st
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser()
     ap.add_argument("summary", nargs="?", type=Path, default=DEFAULT)
     ap.add_argument("--renderer", default="llm")
     args = ap.parse_args()

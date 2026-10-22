@@ -1,22 +1,9 @@
-"""SEA-LION and Mistral: IFEval cost, target census, cap-512 / cap-160 retraining, security
-checks, IFEval breakdown and decision.
-
-Run after main_results.py (adapters, IFEval reports) and languages.py (render audit).
-
-The published adapters defense-sealion-seed0 and defense-mistral-seed0-inline and their unbatched
-IFEval reports come from the steps sealion and mistral of main_results.py; step train checks
-data/baselines/render_cache.json against the render audit of languages.py (step render-audit).
-The Qwen census reads data/baselines/seed0/targets.jsonl. Batched IFEval logs go to
-runs/ifeval_logged_b16.
-"""
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # runs without installing
 
-from ipidefense.runner import Run, Step, main  # noqa: E402
+from ipidefense.runner import Run, Step, main
 
 BACKBONES = "ipidefense.experiments.backbones"
 IFEVAL_LOGGED = "ipidefense.evaluation.ifeval_logged"
@@ -28,8 +15,7 @@ def ifeval(run: Run) -> None:
 
 
 def targets(run: Run) -> None:
-    # the targets are shipped in data/backbones: these runs verify them and write the reports
-    # (move the files aside to generate them again)
+    # targets ship in data/backbones, these runs only verify them
     for bb in ("sealion", "mistral"):
         run.py(BACKBONES, "targets", "--backbone", bb, "--cap", "512")
         run.py(BACKBONES, "targets", "--backbone", bb, "--cap", "160")
@@ -75,4 +61,4 @@ STEPS = [
 
 
 if __name__ == "__main__":
-    main(__file__, __doc__, STEPS)
+    main(__file__, STEPS)
