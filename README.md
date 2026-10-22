@@ -60,11 +60,6 @@ steps that already finished, so it can be restarted after an interruption.
 | `backbones.py` | SEA-LION and Mistral backbones |
 | `figures.py` | figures of the paper |
 
-Useful options: `--list` shows the steps of a script and the tables they produce, `--only STEP`
-runs selected steps, `--dry-run` prints the commands without running them, and `--force` reruns
-finished steps. All outputs go to `runs/`. The comparisons with other defenses reported in the
-paper are not part of this repository.
-
 ## Models
 
 Download into `models/` with `hf download <id> --local-dir models/<name>`:
