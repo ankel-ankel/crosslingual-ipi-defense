@@ -93,14 +93,6 @@ LLM-judge labels, training sets of the backbone experiments, task-accuracy items
 documents. `data/README.md` lists their sources, licences and checksums. The Tensor Trust attack
 texts are not redistributed; `prepare_data.py` downloads them from the original release.
 
-## Notes
-
-- Decoding is greedy. Batched generation pads its inputs, so a different batch size, GPU or
-  library version can change individual outputs; the scripts use the batch sizes of the paper.
-- The paper's results were produced on one NVIDIA GeForce RTX 5090 (32 GB) with bf16 weights.
-- `data/`, `models/` and `runs/` are read from the repository root; the environment variables
-  `IPI_DATA`, `IPI_MODELS` and `IPI_RUNS` point them elsewhere.
-
 ## Licence
 
 MIT (`LICENSE`). Third-party code, data and models keep their own licences: see
