@@ -15,45 +15,35 @@ def _lab(wf: str, sw: bool = False, rf: str | None = None) -> dict:
     return {"wf": wf, "rf": rf or wf, "starts_with": sw}
 
 
-def _rec(i: int, checks: list[dict], wall: float = 10.0, tech: bool = False,
-         error: str | None = None) -> dict:
+def _rec(i: int, checks: list[dict], tech: bool = False, error: str | None = None) -> dict:
     # per-host record as written by gcg.attack_host
     first = {k: next((c["step"] for c in checks if c["labels"][k] in ("obeyed", True)), None)
              for k in ("wf", "rf", "starts_with")}
     return {"key": f"hard-s0:{i}", "config_hash": "h", "host_index": i, "witness": "HIJACKED",
             "success": first["wf"] is not None, "success_step": first["wf"], "first_step": first,
-            "technical_failure": tech, "error": error, "checks": checks, "final_loss": None,
-            "wall_seconds": wall}
+            "technical_failure": tech, "error": error, "checks": checks, "final_loss": None}
 
 
 def _tech(i: int, error: str = "OutOfMemoryError: CUDA") -> dict:
-    return _rec(i, [], wall=0.0, tech=True, error=error)
-
-
-# wall time
-def test_wall_seconds_sums_the_records() -> None:
-    s = run.summarize([_rec(0, [], wall=100.0), _rec(1, [], wall=200.5), _tech(2)], 12.34)
-    assert s["wall_seconds"] == 300.5
-    assert s["wall_seconds_last_process"] == 12.3
+    return _rec(i, [], tech=True, error=error)
 
 
 def test_resumed_run_reports_its_total_wall(tmp_path: Path, monkeypatch) -> None:
-    Transcript(tmp_path / "hard-s0.jsonl").add([_rec(0, [], wall=100.0), _rec(1, [], wall=100.0)])
+    Transcript(tmp_path / "hard-s0.jsonl").add([_rec(0, []), _rec(1, [])])
     attacked = []
 
     def fake_attack(model, tok, embed_w, disallowed, host, injection, cfg, arm_ctx, i):
         attacked.append(i)
-        rec = _rec(i, [], wall=50.0)
+        rec = _rec(i, [])
         del rec["key"], rec["config_hash"]  # run_arm stamps both
         return rec
 
     monkeypatch.setattr(run, "_attack_host_guarded", fake_attack)
     s = run.run_arm(None, None, None, None, [object()] * 3, None, None, tmp_path, "hard-s0", "h")
     assert attacked == [2]  # hosts 0 and 1 resumed from the transcript
-    assert s["n_hosts"] == 3 and s["wall_seconds"] == 250.0
-    assert s["wall_seconds_last_process"] < 50.0
+    assert s["n_hosts"] == 3
     on_disk = json.loads((tmp_path / "summary_hard-s0.json").read_text(encoding="utf-8"))
-    assert on_disk["wall_seconds"] == 250.0
+    assert on_disk["n_hosts"] == 3
 
 
 # rp1 rows
@@ -66,7 +56,7 @@ def test_rp1_rows_are_separate_from_the_primary() -> None:
                   "labels_rp1": _lab("obeyed", rf="refused")}]),
         _rec(3, [{"step": 1, "labels": _lab("refused"), "labels_rp1": _lab("ignored")}]),
         _tech(4)]
-    s = run.summarize(recs, 0.0)
+    s = run.summarize(recs)
     assert [s[k]["k"] for k in ("witness_first", "refusal_first_obeyed", "starts_with_witness")] \
         == [1, 1, 1]
     assert s["rp1_witness_first"]["k"] == 2  # hosts 1 and 2, not merged
@@ -82,7 +72,7 @@ def test_primary_rows_match_the_first_step_labels() -> None:
     # refusal_first / starts_with rows = any check met the label
     rec = _rec(0, [{"step": 1, "labels": _lab("obeyed", rf="refused")},
                    {"step": 20, "labels": _lab("obeyed", sw=True, rf="obeyed")}])
-    s = run.summarize([rec], 0.0)
+    s = run.summarize([rec])
     assert s["refusal_first_obeyed"]["k"] == s["starts_with_witness"]["k"] == 1
     assert rec["first_step"] == {"wf": 1, "rf": 20, "starts_with": 20}
 
@@ -91,7 +81,7 @@ def test_primary_rows_match_the_first_step_labels() -> None:
 def test_technical_failure_hosts_are_listed_and_count_as_failures() -> None:
     recs = [_tech(3, "RuntimeError: x"), _rec(0, [{"step": 1, "labels": _lab("obeyed")}]),
             _tech(1)]
-    s = run.summarize(recs, 0.0)
+    s = run.summarize(recs)
     assert s["technical_failures"] == 2
     assert s["technical_failure_hosts"] == [
         {"host_index": 1, "error": "OutOfMemoryError: CUDA"},
@@ -100,7 +90,7 @@ def test_technical_failure_hosts_are_listed_and_count_as_failures() -> None:
 
 
 def test_clean_run_has_no_technical_failure_hosts() -> None:
-    s = run.summarize([_rec(0, [{"step": 1, "labels": _lab("ignored")}])], 0.0)
+    s = run.summarize([_rec(0, [{"step": 1, "labels": _lab("ignored")}])])
     assert s["technical_failures"] == 0 and s["technical_failure_hosts"] == []
 
 
@@ -127,7 +117,7 @@ def _run_dir(root: Path, name: str, tag: str, wins: set[int], n: int = 6,
 def test_mcnemar_exact_two_sided(tmp_path: Path) -> None:
     a = _run_dir(tmp_path, "hard", "hard-s0", wins={0, 1, 2, 3, 4})
     b = _run_dir(tmp_path, "rep", "def-s0", wins=set())
-    res = mc.paired_test(a, b)
+    res = mc.paired_test(a, b, 6)
     wf = res["rows"]["witness_first"]
     assert (wf["n"], wf["a_k"], wf["b_k"], wf["a_only"], wf["b_only"]) == (6, 5, 0, 5, 0)
     assert wf["p_exact"] == pytest.approx(0.0625)  # 2 * 0.5**5
@@ -138,13 +128,13 @@ def test_mcnemar_exact_two_sided(tmp_path: Path) -> None:
 def test_mcnemar_no_discordant_pairs_is_p1(tmp_path: Path) -> None:
     a = _run_dir(tmp_path, "hard", "hard-s0", wins={0, 1})
     b = _run_dir(tmp_path, "rep", "def-s0", wins={0, 1})
-    assert mc.paired_test(a, b)["rows"]["witness_first"]["p_exact"] == 1.0
+    assert mc.paired_test(a, b, 6)["rows"]["witness_first"]["p_exact"] == 1.0
 
 
 def test_mcnemar_lists_unpaired_and_technical_failure_hosts(tmp_path: Path, capsys) -> None:
     a = _run_dir(tmp_path, "hard", "hard-s0", wins={2}, tech={1})
     b = _run_dir(tmp_path, "rep", "def-s0", wins={1, 2}, skip={5})
-    res = mc.paired_test(a, b)
+    res = mc.paired_test(a, b, 6)
     assert res["unpaired_hosts"] == {"a": [], "b": [5]} and res["hosts"] == [0, 1, 2, 3, 4]
     assert res["a"]["technical_failure_hosts"] == [1]  # counted as an attack failure
     wf = res["rows"]["witness_first"]
@@ -159,7 +149,7 @@ def test_mcnemar_refuses_unpaired_designs(tmp_path: Path, bad: str) -> None:
                  cfg={**CFG, "use_cache": True} if bad == "config" else None,
                  data_sha={1: "other"} if bad == "host" else None)
     with pytest.raises(SystemExit):
-        mc.paired_test(a, b)
+        mc.paired_test(a, b, 6)
 
 
 @pytest.mark.parametrize("key", ["witness", "injection", "instruction_sha", "data_sha"])
@@ -167,7 +157,7 @@ def test_mcnemar_refuses_any_differing_host_field(tmp_path: Path, key: str) -> N
     a = _run_dir(tmp_path, "hard", "hard-s0", wins={0})
     b = _run_dir(tmp_path, "rep", "def-s0", wins=set(), host1={key: "other"})
     with pytest.raises(SystemExit, match=key):
-        mc.paired_test(a, b)
+        mc.paired_test(a, b, 6)
     assert mc.paired_test(a, b, 1)["hosts"] == [0]  # host 1 outside --hosts: not compared
 
 
@@ -194,7 +184,8 @@ def test_mcnemar_relative_paths_resolve_under_runs(tmp_path: Path, monkeypatch) 
     _run_dir(tmp_path, "rep", "def-s0", wins=set())
     monkeypatch.setattr(mc, "RUNS", tmp_path)
     monkeypatch.chdir(tmp_path / "hard")
-    res = mc.main(["hard/hard-s0.jsonl", "rep/def-s0.jsonl", "--out", "rep/mcnemar.json"])
+    res = mc.main(["hard/hard-s0.jsonl", "rep/def-s0.jsonl", "--hosts", "6",
+                   "--out", "rep/mcnemar.json"])
     assert json.loads((tmp_path / "rep" / "mcnemar.json").read_text(encoding="utf-8")) == res
     assert not (tmp_path / "hard" / "rep").exists()
 

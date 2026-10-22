@@ -133,7 +133,7 @@ def test_doc_scorers(sub: str) -> None:
 # summaries
 def test_legit_directive_summary(tmp_path) -> None:
     args = argparse.Namespace(exp="directives", arms=["undef", "def-s0", "hard-s0"], seeds=[0],
-                              n_boot=20, limit=0, out_dir=str(tmp_path), audit=3)
+                              n_boot=20, limit=0, out_dir=str(tmp_path))
     out = tmp_path / "directives"
     for arm, c2 in (("undef", 1), ("def-s0", 0), ("hard-s0", 0)):
         recs = [{"key": f"C0|-|{h}", "cond": "C0", "directive": "-", "host": h, "cap_hit": False,
@@ -151,8 +151,6 @@ def test_legit_directive_summary(tmp_path) -> None:
     assert s["families_raw"]["def"]["rho"] == 0.0
     assert s["families"]["hard"]["FSR"] == 1.0 and set(s["by_clause_R"]) == {0, 1, 2}
     assert s["secondary"]["hardening_cost_flag"] is False
-    assert s["audit"]["undef|s0|passes"] == 3 and s["audit"]["def-s0|s0|fails"] == 3
-    assert (out / "audit" / "def-s0__s0_fails.jsonl").exists()
 
 
 def _comply(doc: dict) -> str:
@@ -168,7 +166,7 @@ def _comply(doc: dict) -> str:
 
 def test_legit_docs_summary(tmp_path) -> None:
     args = argparse.Namespace(exp="docs", arms=["undef", "def-s0"], seeds=[0], n_boot=20,
-                              limit=0, out_dir=str(tmp_path), audit=2)
+                              limit=0, out_dir=str(tmp_path))
     docs = ld.make_docs()
     for arm in args.arms:
         recs = [{"key": f"{c}|{d['doc_id']}", "cond": c, "doc_id": d["doc_id"],
@@ -181,7 +179,7 @@ def test_legit_docs_summary(tmp_path) -> None:
     assert s["families_raw"]["def"]["R_undef"] == 1.0
     assert s["form_fields"]["def-s0|D"] == {"Name": 0.0, "Date": 0.0, "Room": 0.0}
     assert s["form_fields"]["undef|D"] == {"Name": 1.0, "Date": 1.0, "Room": 1.0}
-    assert set(s["by_subtype"]) == set(ld.SUBTYPES) and s["audit"]["undef|s-1|passes"] == 2
+    assert set(s["by_subtype"]) == set(ld.SUBTYPES)
 
 
 # quote guard

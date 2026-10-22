@@ -7,25 +7,20 @@ from collections import defaultdict
 from collections.abc import Sequence
 from pathlib import Path
 
-from ipidefense.experiments.suite import qa_language
+from ipidefense.experiments.judge import kappa
+from ipidefense.experiments.suite import qa_language, render_path
 from ipidefense.paths import DATA
 
-NEW = ("ko", "ar", "th", "bn", "my", "km")  # languages added to the suite
-LANGS = NEW
+LANGS = ("ko", "ar", "th", "bn", "my", "km")  # languages added to the suite
 REN = DATA / "renderings"
 WORK = REN / "review_worklist.json"
 SUPP = REN / "review_worklist_supp.json"
 VERDICTS = ("pass", "fail")
 
 
-def _path(lang: str, renderer: str = "v2") -> Path:
-    """Same naming as suite.render_path, relative to REN."""
-    return REN / (f"{lang}.json" if renderer == "v2" else f"{lang}_{renderer}.json")
-
-
 def _cache(lang: str, renderer: str = "v2") -> tuple[dict, dict]:
     """Cached renderings of one language with QA recomputed."""
-    path = _path(lang, renderer)
+    path = render_path(lang, renderer)
     data = json.loads(path.read_text(encoding="utf-8"))
     recs = data.get("records", data)
     qa_language(recs, lang)
@@ -169,20 +164,10 @@ def apply(paths: Sequence[str], worklist: Path, renderer: str = "v2") -> dict:
         for (lg, key), verdict in merged.items():
             if lg == lang:
                 recs[key]["review"] = verdict
-        atomic_write(_path(lang, renderer), data)
+        atomic_write(render_path(lang, renderer), data)
     agree = sum(len({d[lk] for d in votes}) == 1 for lk in merged)
     print(f"applied {len(merged)} verdicts; agreement {agree}/{len(merged)}")
     return {"applied": len(merged), "agreement": agree}
-
-
-def kappa(a: Sequence[bool], b: Sequence[bool]) -> float | None:
-    n = len(a)
-    if not n:
-        return None
-    po = sum(x == y for x, y in zip(a, b, strict=True)) / n
-    pa, pb = sum(a) / n, sum(b) / n
-    pe = pa * pb + (1 - pa) * (1 - pb)
-    return None if pe == 1 else round((po - pe) / (1 - pe), 4)
 
 
 def report(paths: Sequence[str], worklist: Path) -> dict:

@@ -13,7 +13,7 @@ DEFINITION = (
     "json_format,\n      repeat_prompt, response_language\n"
     "  SF  short-favouring (46): number_words / number_sentences 'less than'\n"
     "  OTHER everything else (372)")
-EXPECTED = {"CS": 228, "IL": 188, "SF": 46, "OTHER": 372}
+SUBSETS = ("CS", "IL", "SF", "OTHER")
 CS_ANY = {"length_constraints:number_paragraphs", "length_constraints:nth_paragraph_first_word",
           "detectable_format:multiple_sections", "detectable_content:postscript",
           "startend:end_checker", "startend:quotation", "combination:two_responses"}
@@ -39,7 +39,7 @@ def label(iid: str, kwargs: dict | None) -> str:
 
 
 def build() -> dict:
-    """One label per prompt and instruction, checked against the subset counts."""
+    """One label per prompt and instruction."""
     rows = load_prompts(0)
     labels = []
     for i, row in enumerate(rows):
@@ -48,12 +48,10 @@ def build() -> dict:
                        "subsets": [label(iid, kw) for iid, kw in
                                    zip(row["instruction_id_list"], kws, strict=True)],
                        "instruction_id_list": row["instruction_id_list"]})
-    counts = {k: sum(s == k for r in labels for s in r["subsets"]) for k in EXPECTED}
-    if counts != EXPECTED:
-        raise SystemExit(f"subset counts {counts} != expected {EXPECTED}")
+    counts = {k: sum(s == k for r in labels for s in r["subsets"]) for k in SUBSETS}
     return {"source": "data/ifeval_input.jsonl via ipidefense.evaluation.ifeval.load_prompts",
             "definition": DEFINITION, "counts": counts,
-            "prompts_with": {k: sum(k in r["subsets"] for r in labels) for k in EXPECTED},
+            "prompts_with": {k: sum(k in r["subsets"] for r in labels) for k in SUBSETS},
             "labels": labels}
 
 

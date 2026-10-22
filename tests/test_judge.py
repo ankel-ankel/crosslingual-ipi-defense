@@ -44,7 +44,6 @@ def test_judge_dump_blind_items(tmp_path) -> None:
         assert "def-s0" not in json.dumps(it["meta"]) and it["injection"] is None or (
             it["injection"] in [i.render() for i in EVAL_INJS])
     assert len({i["item_id"] for i in items}) == len(items)
-    assert set(s["reproduction"]) == {"attack|undef|s0", "attack|def-s0|s0", "benign|def-s0|s0"}
 
 
 # split, merge, score

@@ -5,7 +5,6 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 from ipidefense.paths import MODELS
 
-BASE_DIR = MODELS / "Llama-3.1-8B-Instruct"
 ADAPTER_DIR = MODELS / "Meta-SecAlign-8B"
 QWEN_DIR = MODELS / "Qwen2.5-7B-Instruct"
 SEALION_DIR = MODELS / "Llama-SEA-LION-v3-8B-IT"
@@ -18,29 +17,6 @@ QWEN_INPUT_TEMPLATE = (
     "{% endfor %}"
     "{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}"
 )
-
-
-def _load_base() -> torch.nn.Module:
-    return AutoModelForCausalLM.from_pretrained(
-        str(BASE_DIR), dtype=torch.bfloat16, device_map={"": 0}
-    )
-
-
-# Llama models use the Meta-SecAlign-8B tokenizer and template
-def llama_tokenizer() -> PreTrainedTokenizerBase:
-    return AutoTokenizer.from_pretrained(str(ADAPTER_DIR))
-
-
-def load_undefended() -> tuple[torch.nn.Module, PreTrainedTokenizerBase]:
-    model = _load_base()
-    model.eval()
-    return model, llama_tokenizer()
-
-
-def load_defense_lora(adapter_dir: str) -> tuple[torch.nn.Module, PreTrainedTokenizerBase]:
-    model = PeftModel.from_pretrained(_load_base(), adapter_dir, device_map={"": 0})
-    model.eval()
-    return model, llama_tokenizer()
 
 
 def load_defense_lora_qwen(adapter_dir: str) -> tuple[torch.nn.Module, PreTrainedTokenizerBase]:
@@ -114,9 +90,7 @@ def load_defended(base: str, adapter_dir: str) -> tuple[torch.nn.Module, PreTrai
         return load_defense_lora_qwen(adapter_dir)
     if base == "sealion":
         return load_defense_lora_sealion(adapter_dir)
-    if base == "mistral":
-        return load_defense_lora_mistral(adapter_dir)
-    return load_defense_lora(adapter_dir)
+    return load_defense_lora_mistral(adapter_dir)
 
 
 def load_base_undefended(base: str) -> tuple[torch.nn.Module, PreTrainedTokenizerBase]:
@@ -124,9 +98,7 @@ def load_base_undefended(base: str) -> tuple[torch.nn.Module, PreTrainedTokenize
         return load_qwen_undefended()
     if base == "sealion":
         return load_sealion_undefended()
-    if base == "mistral":
-        return load_mistral_undefended()
-    return load_undefended()
+    return load_mistral_undefended()
 
 
 def build_messages(instruction: str, data: str | None = None, inline: bool = False) -> list[dict]:
@@ -155,20 +127,14 @@ def generate(
     instruction: str,
     data: str | None = None,
     max_new_tokens: int = 256,
-    stop_strings: list[str] | None = None,
     inline: bool = False,
 ) -> str:
     inputs = build_inputs(tok, instruction, data, inline).to(model.device)
-    extra: dict[str, object] = {}
-    if stop_strings:
-        extra["stop_strings"] = list(stop_strings)
-        extra["tokenizer"] = tok
     out = model.generate(
         **inputs,
         max_new_tokens=max_new_tokens,
         do_sample=False,
         pad_token_id=tok.eos_token_id,
-        **extra,
     )
     return tok.decode(out[0, inputs["input_ids"].shape[1] :], skip_special_tokens=True)
 

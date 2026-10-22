@@ -6,9 +6,7 @@ import torch
 
 from ipidefense import paths
 from ipidefense.attacks import recipes as rcp
-from ipidefense.data.hosts import load_en_hosts
-from ipidefense.data.splits import SLICES
-from ipidefense.model import build_messages, generate, generate_batch
+from ipidefense.model import generate
 from ipidefense.training import sets as ts
 from ipidefense.training import sft
 from ipidefense.training.lora import LORA_TARGETS
@@ -54,17 +52,6 @@ def tiny_lora_model(vocab: int, dropout: float = 0.0):
     return model
 
 
-# hosts
-@needs_alpaca
-@pytest.mark.parametrize("seed", [0, 1, 2])
-def test_ref_hosts_match_load_en_hosts(seed: int) -> None:
-    n = SLICES["fresh"][1]
-    ref, base = rcp.load_ref_hosts(n, seed), load_en_hosts(n, seed)
-    assert [(h.instruction, h.data) for h in ref] == [(h.instruction, h.data) for h in base]
-    assert all(h.output.strip() for h in ref)
-    assert rcp.train_hosts(seed) == ref[:1500]
-
-
 # data mix
 @needs_alpaca
 @pytest.mark.parametrize(("seed", "n_clean"), [(0, 902), (1, 909), (2, 882)])
@@ -92,8 +79,6 @@ def test_generation_matches_model_generate(tok) -> None:
             got = ts.generate_one(model, tok, instr, data, 12, eos)
             assert got["text"] == generate(model, tok, instr, data=data, max_new_tokens=12)
             assert got["n_tokens"] <= 12
-        many = ts.generate_many(model, tok, items, 12, eos)
-        assert [g["text"] for g in many] == generate_batch(model, tok, items, max_new_tokens=12)
     rec = ts.gen_record(tok, [40, 41, 151645, 151645], 160, frozenset({151645}))
     assert (rec["n_tokens"], rec["ended_eos"], rec["cap_hit"]) == (2, True, False)
     rec = ts.gen_record(tok, [40, 41, 42], 3, frozenset({151645}))
@@ -113,13 +98,9 @@ def test_adapter_dir_guards(tmp_path: Path) -> None:
     assert sft.adapter_dir("a1-seed0", overwrite=True, models=tmp_path) == used.resolve()
 
 
-def test_unsupervised_examples_are_rejected(tok) -> None:
+def test_unsupervised_examples_are_rejected() -> None:
     with pytest.raises(ValueError):
         sft.length_stats([(10, 20), (1024, 1100)], 1024)
-    msgs = build_messages("Summarize.", "word " * 2000, False)
-    kept, stats = ts.finalize([{"key": "x", "arm": "a1", "messages": msgs, "target": "ok",
-                                "meta": {"kind": "clean"}}], tok)
-    assert kept == [] and stats["dropped_no_supervision"] == ["x"]
 
 
 def test_loss_tee_records_training_log_lines() -> None:

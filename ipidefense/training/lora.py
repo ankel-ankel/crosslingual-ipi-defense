@@ -5,8 +5,6 @@ from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
-from ipidefense.model import BASE_DIR
-
 LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
 
 
@@ -17,7 +15,7 @@ class SFTExample:
 
 
 def build_lora_model(
-    model_dir: str = str(BASE_DIR), r: int = 16, alpha: int = 32, dropout: float = 0.05
+    model_dir: str, r: int = 16, alpha: int = 32, dropout: float = 0.05
 ) -> torch.nn.Module:
     base = AutoModelForCausalLM.from_pretrained(model_dir, dtype=torch.bfloat16, device_map={"": 0})
     cfg = LoraConfig(

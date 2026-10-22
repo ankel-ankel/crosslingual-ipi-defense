@@ -56,17 +56,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### StruQ, SecAlign and Meta-SecAlign recipes (`ipidefense/attacks/recipes.py`)
-
-- The injection recipes in `recipes.py` follow the reference code of
-  [StruQ](https://github.com/Sizhe-Chen/StruQ), [SecAlign](https://github.com/facebookresearch/SecAlign)
-  (`struq.py`, `align.py`, `config.py`, `test.py`) and
-  [Meta_SecAlign](https://github.com/facebookresearch/Meta_SecAlign) (`config.py`, `utils.py`):
-  naive and completion injections, the sets of textual delimiters, the injected-prompt format and
-  StruQ's test-time filter. The delimiter lists are copied from `config.py`.
-- These three repositories are released under the Creative Commons Attribution-NonCommercial 4.0
-  International licence (CC BY-NC 4.0), https://creativecommons.org/licenses/by-nc/4.0/.
-
 ## Data sets
 
 Sources, revisions, checksums and licences of every data item are listed in `data/README.md`.
@@ -89,7 +78,6 @@ In short:
 | Model | Use | Licence |
 |---|---|---|
 | Qwen/Qwen2.5-7B-Instruct | primary backbone | Apache-2.0 |
-| meta-llama/Llama-3.1-8B-Instruct | `--base llama` of the training and evaluation modules (no script uses it) | Llama 3.1 Community License |
 | facebook/Meta-SecAlign-8B | tokenizer files, for the chat template of the SEA-LION backbone | Llama 3.1 Community License |
 | aisingapore/Llama-SEA-LION-v3-8B-IT | additional backbone | Llama 3.1 Community License |
 | mistralai/Mistral-7B-Instruct-v0.3 | additional backbone | Apache-2.0 |

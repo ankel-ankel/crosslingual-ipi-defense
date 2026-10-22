@@ -35,7 +35,7 @@ def outcome(record: dict, row: str) -> bool:
     return bool(record["success"]) if row == "witness_first" else host_hit(record, row)
 
 
-def paired_test(a: Path, b: Path, n_hosts: int | None = None) -> dict:
+def paired_test(a: Path, b: Path, n_hosts: int) -> dict:
     # a technical failure counts as a failed attack
     (ra, pa), (rb, pb) = load_run(a), load_run(b)
     if pa["config"] != pb["config"]:
@@ -43,7 +43,7 @@ def paired_test(a: Path, b: Path, n_hosts: int | None = None) -> dict:
                       if pa["config"].get(k) != pb["config"].get(k))
         raise SystemExit(f"GCG config differs between the runs ({diff}): not the same protocol")
     asg = [{h["host_index"]: h for h in p["host_assignment"]} for p in (pa, pb)]
-    hosts = list(range(n_hosts)) if n_hosts else sorted(asg[0].keys() & asg[1].keys())
+    hosts = list(range(n_hosts))
     for i in hosts:
         if i not in asg[0] or i not in asg[1]:
             raise SystemExit(f"host {i} is not in both host assignments")
@@ -79,12 +79,11 @@ def main(argv: Sequence[str] | None = None) -> dict:
     ap = argparse.ArgumentParser()
     ap.add_argument("a", help="per-host transcript, e.g. gcg/hard_s0/hard-s0.jsonl")
     ap.add_argument("b", help="the paired run's per-host transcript")
-    ap.add_argument("--hosts", type=int, default=None, help="test hosts 0..N-1")
-    ap.add_argument("--out", default=None, help="also write the JSON here")
+    ap.add_argument("--hosts", type=int, required=True, help="test hosts 0..N-1")
+    ap.add_argument("--out", required=True, help="also write the JSON here")
     args = ap.parse_args(argv)
     res = paired_test(_path(args.a), _path(args.b), args.hosts)
-    if args.out:
-        write_json(_path(args.out), res)
+    write_json(_path(args.out), res)
     print(json.dumps(res, indent=1), flush=True)
     return res
 

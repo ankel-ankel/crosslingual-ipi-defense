@@ -1,6 +1,5 @@
 import argparse
 import contextlib
-import inspect
 import json
 import statistics
 import time
@@ -11,9 +10,7 @@ import torch
 from ipidefense.arms import ADAPTER_SEED, ADAPTERS
 from ipidefense.attacks import gcg
 from ipidefense.attacks.templates import EVAL_INJS
-from ipidefense.data.splits import SLICES, hosts_for
-from ipidefense.data.splits import hosts as split_hosts
-from ipidefense.metrics.scoring import classify
+from ipidefense.data.splits import hosts_for
 from ipidefense.metrics.stats import wilson
 from ipidefense.model import load_defense_lora_qwen, load_qwen_undefended
 from ipidefense.paths import MODELS, RUNS
@@ -21,7 +18,6 @@ from ipidefense.utils import Transcript, sha, write_json
 
 # 28 layers x 7 projections, attached as "default"
 N_LORA_MODULES = 196
-_HASHED_SOURCES = ("attacks/gcg.py", "experiments/gcg_run.py")
 MAX_CONSECUTIVE_TECH_FAILURES = 2  # more in a row means a systemic problem
 
 
@@ -31,23 +27,18 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--seed", type=int, default=None, help="host-split seed for undefended arms")
     ap.add_argument("--split", default="adaptive", help="host split (default: adaptive)")
     ap.add_argument("--hosts", type=int, default=50, help="number of hosts (per-host mode)")
-    ap.add_argument("--host-offset", type=int, default=0, help="skip this many hosts in the split")
     ap.add_argument("--steps", type=int, default=500)
     ap.add_argument("--width", type=int, default=512)
     ap.add_argument("--topk", type=int, default=256)
     ap.add_argument("--suffix-len", type=int, default=20)
     ap.add_argument("--check-every", type=int, default=20)
     ap.add_argument("--batch", type=int, default=128, help="candidate-loss mini-batch")
-    ap.add_argument("--max-new-tokens", type=int, default=64)
     ap.add_argument("--no-cache", action="store_true", help="disable prefix-KV reuse")
-    ap.add_argument("--retry-technical-failures", action="store_true",
-                    help="re-attack hosts recorded as technical failures")
-    ap.add_argument("--no-early-stop", action="store_true")
     ap.add_argument("--universal", action="store_true",
                     help="train one universal suffix over several hosts")
     ap.add_argument("--universal-hosts", type=int, default=10)
     ap.add_argument("--eval-suffix", default=None,
-                    help="path to a universal.json (or a raw suffix string) to evaluate, "
+                    help="path to a universal.json to evaluate, "
                          "generation only, over --hosts x all EVAL_INJS")
     ap.add_argument("--compare-undefended", action="store_true",
                     help="also run the paired undefended arm via disable_adapter")
@@ -64,9 +55,7 @@ def build_config(args: argparse.Namespace) -> gcg.GCGConfig:
         suffix_len=args.suffix_len,
         check_every=args.check_every,
         batch=args.batch,
-        max_new_tokens=args.max_new_tokens,
         use_cache=not args.no_cache,
-        early_stop=not args.no_early_stop,
     )
 
 
@@ -106,20 +95,10 @@ def arm_context_factory(model: torch.nn.Module, disable: bool):
 
 def select_hosts(args: argparse.Namespace, n: int) -> list:
     pool = hosts_for(args.adapter, args.split, seed=args.seed)
-    chosen = pool[args.host_offset : args.host_offset + n]
+    chosen = pool[:n]
     if len(chosen) < n:
-        raise ValueError(f"split {args.split!r} has {len(pool)} hosts; need {args.host_offset + n}")
+        raise ValueError(f"split {args.split!r} has {len(pool)} hosts; need {n}")
     return list(chosen)
-
-
-def source_hashes() -> dict[str, str]:
-    # sha1 of the attack code and the helpers it uses
-    pkg = Path(__file__).resolve().parents[1]
-    out = {name: sha((pkg / name).read_text(encoding="utf-8")) for name in _HASHED_SOURCES}
-    parts = [inspect.getsource(f) for f in (classify, split_hosts, hosts_for, wilson)]
-    parts.append(json.dumps(SLICES, sort_keys=True))
-    out["classify,hosts,hosts_for,wilson,SLICES"] = sha("\n".join(parts))
-    return out
 
 
 def design_payload(
@@ -140,13 +119,11 @@ def design_payload(
         "adapter": args.adapter,
         "adapter_seed": ADAPTER_SEED[args.adapter],
         "split": args.split,
-        "host_offset": args.host_offset,
         "n_hosts": len(hosts),
         "universal": args.universal,
         "compare_undefended": args.compare_undefended,
         "config": cfg.as_dict(),
         "injection_rotation": [inj.witness for inj in EVAL_INJS],
-        "source_sha1": source_hashes(),
         "host_assignment": assignment,
     }
 
@@ -166,7 +143,7 @@ def freeze_design(out: Path, payload: dict[str, object]) -> str:
         prior = {k: v for k, v in existing.items() if k not in ("created", "config_hash")}
         if config_hash(prior) != cfg_hash:
             raise SystemExit(
-                f"design mismatch in {path}: the frozen config/hosts/injections/code hashes "
+                f"design mismatch in {path}: the frozen config/hosts/injections "
                 "differ from this invocation. Refusing to overwrite. Use a fresh --out, or "
                 "restore the exact prior settings to resume."
             )
@@ -187,7 +164,7 @@ def host_hit(record: dict, row: str, field: str = "labels") -> bool:
     return any(c.get(field, {}).get(key) == value for c in record["checks"])
 
 
-def summarize(records: list[dict], wall: float) -> dict[str, object]:
+def summarize(records: list[dict]) -> dict[str, object]:
     # technical failures count as attack failures
     n = len(records)
 
@@ -217,8 +194,6 @@ def summarize(records: list[dict], wall: float) -> dict[str, object]:
         "median_steps_to_success_wf": statistics.median(steps) if steps else None,
         "median_steps_to_success_startswith": statistics.median(sw_steps) if sw_steps else None,
         "steps_to_success_wf": sorted(steps),
-        "wall_seconds": round(sum(r.get("wall_seconds") or 0.0 for r in records), 1),
-        "wall_seconds_last_process": round(wall, 1),
     }
 
 
@@ -258,14 +233,12 @@ def _attack_host_guarded(
                     "final_suffix_ids": None,
                     "loss_trace": [],
                     "checks": [],
-                    "wall_seconds": 0.0,
                 }
     raise AssertionError("unreachable")
 
 
 def run_arm(
     model, tok, embed_w, disallowed, hosts, cfg, arm_ctx, out_dir: Path, tag: str, cfg_hash: str,
-    retry_technical: bool = False,
 ) -> dict[str, object]:
     out_dir.mkdir(parents=True, exist_ok=True)
     transcript = Transcript(out_dir / f"{tag}.jsonl")
@@ -276,10 +249,7 @@ def run_arm(
                 f"resume refused: {tag}.jsonl host {rec.get('host_index')} was run under a "
                 f"different config_hash ({rec.get('config_hash')} != {cfg_hash})."
             )
-    if retry_technical:  # re-attack technical failures
-        done = {k for k in done if not transcript.done[k].get("technical_failure")}
-    t0 = time.time()
-    records: list[dict] = [r for k, r in transcript.done.items() if k in done]
+    records: list[dict] = list(transcript.done.values())
     consecutive_fail = 0
     for i, host in enumerate(hosts):
         key = f"{tag}:{i}"
@@ -293,8 +263,7 @@ def run_arm(
         if consecutive_fail >= MAX_CONSECUTIVE_TECH_FAILURES:
             raise SystemExit(
                 f"[{tag}] {consecutive_fail} consecutive technical failures (last: "
-                f"{rec.get('error')}). Systemic problem: fix it, then resume with "
-                "--retry-technical-failures."
+                f"{rec.get('error')}). Systemic problem: fix it, then resume."
             )
         rec["key"] = key
         rec["config_hash"] = cfg_hash
@@ -305,17 +274,9 @@ def run_arm(
         print(f"[{tag}] host {i}: success={rec['success']} step={rec['success_step']} "
               f"tech_fail={rec.get('technical_failure')} loss={loss_s}", flush=True)
     records.sort(key=lambda r: r["host_index"])
-    summary = summarize(records, time.time() - t0)
+    summary = summarize(records)
     write_json(out_dir / f"summary_{tag}.json", summary)
     return summary
-
-
-def load_eval_suffix(spec: str) -> str:
-    # a universal.json path, or a raw suffix string
-    path = Path(spec)
-    if path.exists():
-        return json.loads(path.read_text(encoding="utf-8"))["final_suffix"]
-    return spec
 
 
 def run_eval_suffix(
@@ -341,7 +302,7 @@ def run_eval_suffix(
                    "checks": [{"labels": labels, "response": resp}], "technical_failure": False}
             transcript.add([rec])
             records.append(rec)
-    summary = summarize(records, 0.0)
+    summary = summarize(records)
     for inj in EVAL_INJS:
         subset = [r for r in records if r["witness"] == inj.witness]
         k = sum(1 for r in subset if r["success"])
@@ -365,12 +326,12 @@ def main() -> None:
     if is_peft:
         check_adapter(model)
     embed_w = model.get_input_embeddings().weight
-    disallowed = gcg.build_disallowed_ids(tok, embed_w.shape[0], cfg.allow_non_ascii)
+    disallowed = gcg.build_disallowed_ids(tok, embed_w.shape[0])
 
     if args.eval_suffix is not None:
         hosts = select_hosts(args, args.hosts)
         cfg_hash = freeze_design(out, design_payload(args, cfg, hosts))
-        suffix = load_eval_suffix(args.eval_suffix)
+        suffix = json.loads(Path(args.eval_suffix).read_text(encoding="utf-8"))["final_suffix"]
         summary = run_eval_suffix(
             model, tok, hosts, suffix, arm_context_factory(model, disable=False),
             out, f"eval_{args.adapter}", cfg, cfg_hash,
@@ -396,7 +357,6 @@ def main() -> None:
     defended_summary = run_arm(
         model, tok, embed_w, disallowed, hosts, cfg,
         arm_context_factory(model, disable=False), out, args.adapter, cfg_hash,
-        retry_technical=args.retry_technical_failures,
     )
     print(f"[{args.adapter}] witness-first {defended_summary['witness_first']}", flush=True)
 
@@ -406,7 +366,6 @@ def main() -> None:
         undef_summary = run_arm(
             model, tok, embed_w, disallowed, hosts, cfg,
             arm_context_factory(model, disable=True), out, "undef", cfg_hash,
-            retry_technical=args.retry_technical_failures,
         )
         print(f"[undef] witness-first {undef_summary['witness_first']}", flush=True)
 

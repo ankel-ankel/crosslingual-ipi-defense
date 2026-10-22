@@ -110,6 +110,7 @@ def _cache(tids: list[str], hard: set[str], review: dict[str, str] | None = None
 def ren(tmp_path, monkeypatch):
     """Review module on a temp dir, with stored QA flags."""
     monkeypatch.setattr(rl, "REN", tmp_path)
+    monkeypatch.setattr(su, "RENDER_DIR", tmp_path)
     monkeypatch.setattr(rl, "WORK", tmp_path / "review_worklist.json")
     monkeypatch.setattr(rl, "SUPP", tmp_path / "review_worklist_supp.json")
     monkeypatch.setattr(rl, "LANGS", ("ko",))
@@ -167,7 +168,8 @@ def test_check_and_apply(ren: Path) -> None:
 # language plan
 def _ml2(passing: set[str]) -> dict:
     langs = ("en", "ko", "ar", "th", "bn", "my", "km")
-    return {"exp": "ml2", "decision": {"table": {x: {"pass": x in passing} for x in langs}}}
+    return {"exp": "ml2", "renderer": "llm",
+            "decision": {"table": {x: {"pass": x in passing} for x in langs}}}
 
 
 @pytest.mark.parametrize("passing,main,extra", [
@@ -178,7 +180,7 @@ def _ml2(passing: set[str]) -> dict:
     ({"ko", "th", "bn", "my", "km"}, ["ko", "bn"], ["th", "my"]),  # extras capped at 2
 ])
 def test_language_plan(passing: set[str], main: list[str], extra: list[str]) -> None:
-    langs, ex = mp.plan(_ml2(passing))
+    langs, ex = mp.plan(_ml2(passing), "llm")
     assert langs == ["en", "es", "vi", "fr", "de", "zh"] + main and ex == extra
 
 
@@ -186,9 +188,9 @@ def test_language_plan_rejects_incomplete_table() -> None:
     s = _ml2({"bn"})
     del s["decision"]["table"]["km"]
     with pytest.raises(ValueError):
-        mp.plan(s)
+        mp.plan(s, "llm")
     with pytest.raises(ValueError):
-        mp.plan({**s, "exp": "ml3"})
+        mp.plan({**s, "exp": "ml3"}, "llm")
 
 
 def test_trainpool_records_are_not_reviewed(ren: Path) -> None:

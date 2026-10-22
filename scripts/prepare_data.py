@@ -3,12 +3,9 @@ import bz2
 import hashlib
 import json
 import re
-import sys
 from pathlib import Path
 
 import requests
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # runs without installing
 
 from ipidefense.paths import DATA
 from ipidefense.runner import Run, Step, main, shown, user_path
@@ -82,14 +79,6 @@ def sha1(text: str) -> str:
     return hashlib.sha1(text.encode("utf-8")).hexdigest()
 
 
-def file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as fh:
-        for block in iter(lambda: fh.read(1 << 20), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
 def adapt(text: str) -> str:
     """Replace the single target match by {witness} and double literal braces."""
     (m,) = TARGET.finditer(text)
@@ -159,7 +148,7 @@ def tensor_trust(run: Run) -> None:
     texts: dict[str, str] = {}
     if ids:
         dump = run.args.dump or fetch_dump()
-        if file_sha256(dump) != DUMP_SHA256:
+        if sha256_file(dump) != DUMP_SHA256:
             raise SystemExit(f"{dump}: sha256 is not the pinned {DUMP_SHA256}")
         texts = dump_texts(dump, ids)
     for lang, recs in pools.items():

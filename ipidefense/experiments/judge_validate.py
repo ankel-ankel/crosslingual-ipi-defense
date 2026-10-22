@@ -181,21 +181,15 @@ def main() -> None:
     ap.add_argument("path", nargs="?")
     ap.add_argument("--label", default="C", help="ingest-web: pass label, one of C D E F G")
     ap.add_argument("--model", default=None, help="ingest-web: the web chat's model, as displayed")
-    ap.add_argument("--dump", type=Path, default=DUMP,
-                    help="judge items, key, passes A and B and validation/ (default: data/judge)")
-    ap.add_argument("--out", type=Path, default=None,
-                    help="writes <out>/validation (default: runs/judge_dump for data/judge, "
-                         "else --dump)")
     args = ap.parse_args()
-    out = args.out or (OUT if args.dump.resolve() == DUMP.resolve() else args.dump)
     if args.cmd == "ingest-web":
         if not args.path:
             ap.error("path required")
-        ingest_web(args.path, args.label, args.model, args.dump, out)
+        ingest_web(args.path, args.label, args.model)
     elif args.cmd == "sample":
-        sample(args.dump, out)
+        sample()
     else:
-        report(args.dump, out)
+        report()
 
 
 if __name__ == "__main__":

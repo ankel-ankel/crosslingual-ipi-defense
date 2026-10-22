@@ -426,17 +426,6 @@ def test_qa_gate_descriptive_below_20_and_readiness(env) -> None:
 
 
 # suite human_mt
-class _WordTok:
-    """Fake tokenizer for --dry-run, one token per word."""
-
-    def apply_chat_template(self, msgs: list[dict], add_generation_prompt: bool = True,
-                            tokenize: bool = False) -> str:
-        return " ".join(m["content"] for m in msgs)
-
-    def __call__(self, text: str, add_special_tokens: bool = False) -> dict:
-        return {"input_ids": text.split()}
-
-
 def _suite_env(monkeypatch) -> None:
     def stop(arms):
         raise Stop("model load reached")
@@ -446,7 +435,6 @@ def _suite_env(monkeypatch) -> None:
         for i in range(N_HOSTS)])
     monkeypatch.setattr(su, "load_eval_model", stop)
     monkeypatch.setattr(su, "free_nllb", lambda: None)
-    monkeypatch.setattr(su, "_qwen_tokenizer", _WordTok)
 
 
 def _write(args: argparse.Namespace, hit: Callable[[str, str, str, int], bool]) -> None:
@@ -482,26 +470,17 @@ def test_human_mt_run_freeze_summary_and_frozen_check(env, monkeypatch) -> None:
     _suite_env(monkeypatch)
     out = env / "suite"
     args = argparse.Namespace(exp="human_mt", renderer="llm", arms=["undef", "def-s0", "hard-s0"],
-                              seeds=[0], langs=["es", "vi"], limit_hosts=0, out_dir=str(out),
-                              batch=75, mnt=64)
-    for wrong in ({"batch": 32}, {"mnt": 256}):  # the human run's settings only
-        with pytest.raises(SystemExit, match="--batch 75 --mnt 64"):
-            su.run_exp(argparse.Namespace(**{**vars(args), **wrong, "dry_run": True}))
-    dry = su.run_exp(argparse.Namespace(**vars(args), dry_run=True))
-    assert dry["langs"] == {"es": {"templates": 23, "qa_ok": 21}, "vi": {"templates": 24,
-                                                                       "qa_ok": 19}}
-    assert dry["total"] == 3 * (23 + 24) * N_HOSTS and dry["frozen_design_sha1"] is None
-    padded = dry["max_padded_tokens"]  # one batch of N_HOSTS prompts per template unit
-    assert set(padded) == {"es", "vi"} and all(n > 0 and n % N_HOSTS == 0 for n in padded.values())
-    assert dry["est_peak_gib"] == {x: round(14.9 + 3.1e-4 * n, 1) for x, n in padded.items()}
+                              seeds=[0], langs=["es", "vi"], out_dir=str(out), batch=75)
     pre = out / "human_mt" / "design.json"
-    assert not pre.exists()  # a dry run freezes nothing
+    with pytest.raises(SystemExit, match="--batch 75"):  # the human run's settings only
+        su.run_exp(argparse.Namespace(**{**vars(args), "batch": 32}))
+    assert not pre.exists()
     with pytest.raises(Stop):
         su.run_exp(args)
     frozen = json.loads(pre.read_text(encoding="utf-8"))
     design, inv = frozen["design"], frozen["invocations"][0]
     assert design["label"] == hm.LABEL and design["renderer"] == "llm"
-    assert design["rule"] == su.RULES["human_mt"] and design["focus_templates"] == list(hm.FOCUS)
+    assert design["focus_templates"] == list(hm.FOCUS)
     assert "renderings" not in design and set(inv["renderings"]) == {"es", "vi"}  # per invocation
     es = inv["renderings"]["es"]
     assert es[SAY]["generated"] is False and es[ROLEPLAY] == {**es[ROLEPLAY], "generated": True,
@@ -511,8 +490,6 @@ def test_human_mt_run_freeze_summary_and_frozen_check(env, monkeypatch) -> None:
         "{witness}", hm.templates()[TT].witness))
     listed = {t["tid"] for t in inv["templates"]["es"]}
     assert len(listed) == 23 and SAY not in listed
-    again = su.run_exp(argparse.Namespace(**vars(args), dry_run=True))
-    assert again["matches_frozen"] is True and again["design_sha1"] == frozen["design_sha1"]
 
     def hit(fam: str, lang: str, tid: str, h: int) -> bool:
         if fam == "undef":
@@ -526,7 +503,7 @@ def test_human_mt_run_freeze_summary_and_frozen_check(env, monkeypatch) -> None:
     assert json.loads((out / "human_mt" / "summary.json").read_text(encoding="utf-8")) == s
     assert sorted(p.name for p in (out / "transcripts").iterdir()) == sorted(
         f"{a}__s0__security__human_mt.jsonl" for a in ("undef", "def-s0", "hard-s0"))
-    assert s["exp"] == "human_mt" and s["rule"] == su.RULES["human_mt"]
+    assert s["exp"] == "human_mt"
     assert s["template_check"] == {"design": str(pre), "dropped": {}, "missing": {}}
     d = s["decision"]
     assert d["lands"] == {"es": True, "vi": True}
@@ -542,7 +519,6 @@ def test_human_mt_run_freeze_summary_and_frozen_check(env, monkeypatch) -> None:
     assert d["base_failures"] == [{"key": "def|es", "family": "human",
                                    "templates": [hm.FOCUS[0]]}]
     x = s["human_mt"]
-    assert x["label"] == "human-authored strategies, machine-translated"
     assert x["qa"]["es"]["n_qa_ok"] == 21 and x["qa"]["vi"]["status"].startswith("descriptive")
     assert set(x["qa"]["es"]["excluded"]) == {SAY, ROLEPLAY, PARROT}
     f = x["focus"]["es"][hm.FOCUS[0]]
@@ -610,28 +586,21 @@ def test_human_mt_batch_per_language(env, monkeypatch) -> None:
     _suite_env(monkeypatch)
     out = env / "suite"
     base = {"exp": "human_mt", "renderer": "llm", "arms": ["undef", "def-s0"], "seeds": [0],
-            "limit_hosts": 0, "out_dir": str(out), "mnt": 64}
-    for langs, batch, msg in ((["bn"], 75, "bn with --batch 48 --mnt 64"),
-                              (["bn"], 64, "bn with --batch 48 --mnt 64"),
-                              (["es"], 48, "es with --batch 75 --mnt 64"),
+            "out_dir": str(out)}
+    for langs, batch, msg in ((["bn"], 75, "bn with --batch 48"),
+                              (["bn"], 64, "bn with --batch 48"),
+                              (["es"], 48, "es with --batch 75"),
                               (["es", "bn"], 75, "separate invocations"),
                               (["es", "bn"], 48, "separate invocations"),
                               (["en"], 75, "human_mt languages")):
         with pytest.raises(SystemExit, match=msg):
-            su.run_exp(argparse.Namespace(**base, langs=langs, batch=batch, dry_run=True))
-    with pytest.raises(SystemExit, match="--batch 48 --mnt 64"):
-        su.run_exp(argparse.Namespace(**{**base, "mnt": 256}, langs=["bn"], batch=48,
-                                      dry_run=True))
-    dry_es = su.run_exp(argparse.Namespace(**base, langs=["es"], batch=75, dry_run=True))
-    dry_bn = su.run_exp(argparse.Namespace(**base, langs=["bn"], batch=48, dry_run=True))
-    assert dry_es["design_sha1"] == dry_bn["design_sha1"]  # one design for both invocations
-    assert set(dry_bn["est_peak_gib"]) == {"bn"} and not (out / "human_mt").exists()
+            su.run_exp(argparse.Namespace(**base, langs=langs, batch=batch))
+    assert not (out / "human_mt").exists()
     for langs, batch in ((["es"], 75), (["bn"], 48)):  # the two invocations of the plan
         with pytest.raises(Stop):
             su.run_exp(argparse.Namespace(**base, langs=langs, batch=batch))
     frozen = json.loads((out / "human_mt" / "design.json").read_text(encoding="utf-8"))
-    assert frozen["design_sha1"] == dry_es["design_sha1"]
-    assert frozen["design"]["batch"] == su.HUMAN_MT_BATCH
+    assert frozen["design"]["batch"] == su.HUMAN_MT_BATCH  # one design for both invocations
     assert [(inv["langs"], inv["batch"]) for inv in frozen["invocations"]] == [(["es"], 75),
                                                                                 (["bn"], 48)]
     assert [set(inv["renderings"]) for inv in frozen["invocations"]] == [{"es"}, {"bn"}]
@@ -640,19 +609,17 @@ def test_human_mt_batch_per_language(env, monkeypatch) -> None:
 def test_cli_renderer_rules(monkeypatch) -> None:
     seen = []
     monkeypatch.setattr(su, "summarize", lambda a: seen.append((a.exp, a.renderer)))
-    monkeypatch.setattr(su, "run_exp", lambda a: seen.append((a.exp, a.renderer, a.dry_run)))
+    monkeypatch.setattr(su, "run_exp", lambda a: seen.append((a.exp, a.renderer)))
     for argv in (["summarize", "--exp", "human_mt"], ["summarize", "--exp", "ml3"],
-                 ["run", "--exp", "human_mt", "--dry-run"], ["summarize", "--exp", "human"],
+                 ["run", "--exp", "human_mt"], ["summarize", "--exp", "human"],
                  ["summarize", "--exp", "ml3", "--renderer", "llm"]):
         monkeypatch.setattr(sys, "argv", ["suite.py", *argv])
         su.main()
-    assert seen == [("human_mt", "llm"), ("ml3", "v2"), ("human_mt", "llm", True),
+    assert seen == [("human_mt", "llm"), ("ml3", "v2"), ("human_mt", "llm"),
                     ("human", "v2"), ("ml3", "llm")]
     for argv in (["summarize", "--exp", "human_mt", "--renderer", "v2"],
                  ["summarize", "--exp", "human", "--renderer", "llm"],
-                 ["run", "--exp", "human_mt", "--renderer", "old"],
-                 ["summarize", "--exp", "human_mt", "--dry-run"],
-                 ["run", "--exp", "ml3", "--renderer", "llm", "--dry-run"]):
+                 ["run", "--exp", "human_mt", "--renderer", "old"]):
         monkeypatch.setattr(sys, "argv", ["suite.py", *argv])
         with pytest.raises(SystemExit) as code:
             su.main()

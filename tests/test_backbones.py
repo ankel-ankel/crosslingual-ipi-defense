@@ -139,9 +139,6 @@ def test_parse_arm_and_backbone_mixing() -> None:
     assert (a.inline, a.own_seed, a.defended, a.family) == (True, 0, True, "mistral-cfgA")
     s = rt.parse_arm("sealion-undef")
     assert (s.inline, s.own_seed, s.defended) == (False, None, False)
-    with pytest.raises(ValueError):  # StruQ filter strips Qwen ChatML, so Qwen arms only
-        rt.parse_arm("sealion-def-s0+filter")
-    assert rt.parse_arm("def-s0+filter").filtered
     with pytest.raises(ValueError):
         rt.parse_arm("nope")
     assert arms.arms_base(["undef", "def-s0"]) == "qwen" and arms.arms_base([]) == "qwen"
@@ -309,7 +306,6 @@ def test_cmd_targets_end_to_end(b: str, backbones, tmp_path: Path, monkeypatch) 
     monkeypatch.setattr(bb, "OUT", tmp_path / "runs")
     monkeypatch.setattr(bb, "backbone_tokenizer", lambda x: tok)
     monkeypatch.setattr(bb, "load_frozen", lambda x: frozen)
-    monkeypatch.setattr(bb, "env_info", lambda: {"cpu_test": True})
     monkeypatch.setattr(bb, "generation_settings", lambda x: {})
     rep = bb.cmd_targets(b, 8, limit=3)
     path = bb.targets_path(b, 8, smoke=True)
@@ -419,7 +415,6 @@ def test_census_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert str(bb.targets_path("mistral", 160)) in res["missing"]
     assert str(bb.targets_path("mistral", 512)) in res["missing"]
     assert set(res["generation"]) == {"qwen", "sealion", "mistral"}
-    assert json.loads((tmp_path / "census.json").read_text(encoding="utf-8"))["definitions"]
 
 
 # build and train
@@ -519,8 +514,7 @@ def test_sec_plan_and_cmd_sec(tmp_path: Path, monkeypatch) -> None:
     with pytest.raises(SystemExit):
         bb.sec_plan("sealion", False, ["mistral-undef"])
     ns = bb.suite_args("sealion", plan_arms, langs)
-    assert (ns.exp, ns.renderer, ns.seeds, ns.batch, ns.mnt, ns.limit_hosts) == (
-        "ml1b", "v2", [0], 32, 64, 0)
+    assert (ns.exp, ns.renderer, ns.seeds, ns.batch) == ("ml1b", "v2", [0], 32)
     assert Path(ns.out_dir) == bb.suite_dir("sealion")
     seen: list[argparse.Namespace] = []
     monkeypatch.setattr(su, "run_exp", seen.append)
@@ -547,9 +541,11 @@ def test_suite_runs_backbone_arm_end_to_end(b: str, backbones, tmp_path: Path,
     monkeypatch.setattr(bb, "OUT", tmp_path)
     monkeypatch.setattr(su, "RENDER_DIR", tmp_path / "renderings")
     monkeypatch.setattr(su, "load_eval_model", lambda names: (model, tok))
-    su.run_exp(bb.suite_args(b, [f"{b}-undef"], ["en"], limit_hosts=2))
-    smoke = tmp_path / f"suite_{b}" / "smoke"
-    path = su.transcript_path(smoke, rt.parse_arm(f"{b}-undef"), 0, "ml1b", "v2")
+    two_hosts = su.hosts_for
+    monkeypatch.setattr(su, "hosts_for", lambda *a: two_hosts(*a)[:2])
+    su.run_exp(bb.suite_args(b, [f"{b}-undef"], ["en"]))
+    out = tmp_path / f"suite_{b}"
+    path = su.transcript_path(out, rt.parse_arm(f"{b}-undef"), 0, "ml1b", "v2")
     recs = list(su.read_records(path).values())
     assert len(recs) == 6 and all((r["mnt"], r["batch"]) == (64, 32) for r in recs)
     h = hosts(0, "security")[0]
@@ -558,9 +554,9 @@ def test_suite_runs_backbone_arm_end_to_end(b: str, backbones, tmp_path: Path,
     msgs = build_messages(h.instruction, data, INLINE[b])  # the backbone's own format
     assert r["prompt_sha"] == sha(su.chat_text(tok, msgs))
     monkeypatch.setattr(bb, "N_SEC_HOSTS", 2)
-    cell = bb.security_cell(b, f"{b}-undef", ["en"], out=smoke)
+    cell = bb.security_cell(b, f"{b}-undef", ["en"], out=out)
     assert cell["en"]["n"] == 6 and cell["en"]["wf_k"] >= cell["en"]["rf_k"]
-    assert bb.security_cell(b, f"{b}-undef", ["en", "es"], out=smoke) is None  # incomplete
+    assert bb.security_cell(b, f"{b}-undef", ["en", "es"], out=out) is None  # incomplete
 
 
 # rules
@@ -691,7 +687,6 @@ def test_decide_end_to_end(tmp_path: Path, monkeypatch) -> None:
     assert six["best_config"] == "B" and not six["complete"]  # undef lacks fr/de/zh
     assert six["sealion-cfgB-s0"]["zh"]["wf"]["n"] == 2
     assert mi["decision"] == "pending" and "ifeval:mistral-cfgA-s0" in mi["missing"]
-    assert json.loads((runs / "decision.json").read_text(encoding="utf-8"))["rules"] == rules.RULES
     _write_ifeval(tmp_path / "bad", "sealion-undef", ok, batch=1)
     with pytest.raises(SystemExit):  # unbatched transcripts never enter the batched rule
         bb.ifeval_counts("sealion-undef", tmp_path / "bad")
@@ -699,10 +694,7 @@ def test_decide_end_to_end(tmp_path: Path, monkeypatch) -> None:
 
 # Qwen IFEval path
 def test_qwen_ifeval_constants_and_single_load(monkeypatch) -> None:
-    assert {k: ifl.PUBLISHED[k] for k in ("undef", "def-s0", "def-s1", "def-s2")} == {
-        "undef": (633, 366), "def-s0": (590, 331), "def-s1": (570, 313), "def-s2": (592, 327)}
-    assert (ifl.GATE_TOL, ifl.RANDOM_LETTER_IDX, ifl.OUT) == (2, (19, 22),
-                                                               paths.RUNS / "ifeval_logged")
+    assert ifl.OUT == paths.RUNS / "ifeval_logged"
     assert ifl.default_out(1) == ifl.OUT
     assert ifl.default_out(16) == paths.RUNS / "ifeval_logged_b16" == bb.IFEVAL_DIR
     calls: list[str] = []

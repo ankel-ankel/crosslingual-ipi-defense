@@ -163,10 +163,10 @@ def test_sample_valid_candidates_fills_width_and_roundtrips(qwen_tok):
     grad = torch.randn(20, 152064)
     disallowed = gcg.build_disallowed_ids(qwen_tok, 152064)
     cfg = gcg.GCGConfig(search_width=64, topk=256)
-    cand, n_valid, rounds = gcg.sample_valid_candidates(
+    cand, n_valid = gcg.sample_valid_candidates(
         qwen_tok, optim, grad, spans, cfg, disallowed
     )
-    assert cand.shape[0] == 64 and n_valid == 64 and rounds >= 1
+    assert cand.shape[0] == 64 and n_valid == 64
     # every returned candidate round-trips through the in-context filter
     assert gcg.filter_candidates(qwen_tok, cand, spans).shape[0] == 64
 

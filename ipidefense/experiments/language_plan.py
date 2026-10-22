@@ -1,6 +1,5 @@
 import argparse
 import json
-from pathlib import Path
 
 from ipidefense.paths import RUNS
 
@@ -9,11 +8,11 @@ SLOT_A, SLOT_B = ("ko", "ar", "th"), ("bn", "my", "km")
 DEFAULT = RUNS / "suite" / "ml2" / "summary.json"
 
 
-def plan(summary: dict, renderer: str | None = None) -> tuple[list[str], list[str]]:
+def plan(summary: dict, renderer: str) -> tuple[list[str], list[str]]:
     """(ml3 languages, seed-0-only extra languages) from an ml2 summary."""
     if summary.get("exp") != "ml2":
         raise ValueError("not an ml2 summary")
-    if renderer is not None and summary.get("renderer") != renderer:
+    if summary.get("renderer") != renderer:
         raise ValueError(f"ml2 summary renderer {summary.get('renderer')!r} != {renderer!r}")
     table = summary["decision"]["table"]
     missing = [x for x in ("en",) + SLOT_A + SLOT_B if x not in table]
@@ -28,10 +27,9 @@ def plan(summary: dict, renderer: str | None = None) -> tuple[list[str], list[st
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("summary", nargs="?", type=Path, default=DEFAULT)
     ap.add_argument("--renderer", default="llm")
     args = ap.parse_args()
-    langs, extra = plan(json.loads(args.summary.read_text(encoding="utf-8")), args.renderer)
+    langs, extra = plan(json.loads(DEFAULT.read_text(encoding="utf-8")), args.renderer)
     print("MAIN " + " ".join(langs))
     print("EXTRA " + " ".join(extra))
 

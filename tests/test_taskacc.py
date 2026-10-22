@@ -1,4 +1,3 @@
-import argparse
 import json
 from pathlib import Path
 
@@ -53,12 +52,13 @@ def test_prepared_datasets() -> None:
     assert len(ta.POOL) >= 30
 
 
-def test_taskacc_summary(tmp_path) -> None:
-    args = argparse.Namespace(arms=["undef", "def-s0"], limit=0, out_dir=str(tmp_path))
+def test_taskacc_summary(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(ta, "ARMS", ("undef", "def-s0"))
+    monkeypatch.setattr(ta, "OUT", tmp_path)
     rows = [{"id": f"q{k}", "question": "Who?", "context": "Ctx.", "golds": ["Ada Byron"],
              "decoy_far": "Tasmania", "decoy_far_type": "place", "decoy_near": "Bob"}
             for k in range(6)]
-    for arm in args.arms:
+    for arm in ta.ARMS:
         recs = []
         for u in ta.units_for("squad", rows):
             for it in u:
@@ -66,7 +66,7 @@ def test_taskacc_summary(tmp_path) -> None:
                 text = (it.meta["decoy"] or it.meta["witness"] or "x") if bad else "Ada Byron"
                 recs.append({"key": it.key, **it.meta, "output": text, **ta.score(it, text)})
         _write(tmp_path / "transcripts" / f"{arm}.jsonl", recs)
-    s = ta.summarize(args)
+    s = ta.summarize()
     assert s["cells"]["def-s0|squad|C1"]["retention_f1"] == 1.0
     assert s["cells"]["undef|squad|C3"]["obey_wf"]["k"] == 6
     assert s["paired"]["def-s0-vs-undef|squad|C1"]["f1_diff"] == 1.0

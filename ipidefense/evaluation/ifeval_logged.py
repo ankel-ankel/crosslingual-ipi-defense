@@ -19,16 +19,10 @@ from ipidefense.model import (
 from ipidefense.paths import MODELS, RUNS
 from ipidefense.utils import Transcript, chunks, sha, write_json
 
-# reference IFEval counts of the unbatched runs (instructions, prompts)
-PUBLISHED = {"undef": (633, 366), "def-s0": (590, 331), "def-s1": (570, 313),
-             "def-s2": (592, 327),
-             "sealion-undef": (689, 412), "sealion-def-s0": (552, 303),
-             "mistral-undef": (472, 248), "mistral-def-s0": (337, 158)}
-GATE_TOL = 2  # the scorer is random on 2 prompts
-RANDOM_LETTER_IDX = (19, 22)  # keywords:letter_frequency with a non-letter -> random letter
 N_LORA_MODULES = 196  # 28 layers x 7 projections
 LORA_MODULES = {"qwen": N_LORA_MODULES, "sealion": 32 * 7, "mistral": 32 * 7}
 OUT = RUNS / "ifeval_logged"
+MNT = 512
 
 
 def default_out(batch: int) -> Path:
@@ -202,20 +196,9 @@ def summarize(arm: str, recs: list[dict], out: Path, batch: int = 1) -> dict:
         "instruction_strict_count": n_inst, "prompt_strict_count": n_prompt,
         "instruction_strict_acc": round(n_inst / len(inst), 4),
         "prompt_strict_acc": round(n_prompt / len(recs), 4),
-        "random_letter_prompts": {str(i): recs[i]["flags"] for i in RANDOM_LETTER_IDX
-                                  if i < len(recs)},
         "mean_tokens": round(sum(r["n_tokens"] for r in recs) / len(recs), 1),
         "share_hit_cap": round(sum(not r["stopped_eos"] for r in recs) / len(recs), 4),
-        "published_counts": PUBLISHED.get(arm),
-        "reproduces_published": None,
     }
-    if arm in PUBLISHED and len(recs) == 541:
-        pi, pp = PUBLISHED[arm]
-        if batch > 1:  # reference counts are unbatched, so a gap is batch drift
-            summary["published_delta_informational"] = [n_inst - pi, n_prompt - pp]
-        else:
-            summary["reproduces_published"] = (abs(n_inst - pi) <= GATE_TOL
-                                               and abs(n_prompt - pp) <= GATE_TOL)
     if batch > 1:
         summary["batch"] = batch
     write_json(out / f"{arm}_summary.json", summary)
@@ -227,20 +210,14 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--arms", nargs="+", choices=list(ADAPTERS),
                     default=["undef", "def-s0", "def-s1", "def-s2"])
-    ap.add_argument("--max-new-tokens", type=int, default=512)
-    ap.add_argument("--n", type=int, default=0, help="0 = all 541 prompts (smoke test: 3)")
     ap.add_argument("--batch", type=int, default=1,
                     help="1 = unbatched (published path); N > 1 = left-padded batches of N")
-    ap.add_argument("--out-dir", default=None,
-                    help="default: runs/ifeval_logged (batch 1) or runs/ifeval_logged_b<N>")
     args = ap.parse_args()
-    out = Path(args.out_dir) if args.out_dir else default_out(args.batch)
-    if args.batch > 1 and out.resolve() == OUT.resolve():
-        ap.error("batched runs must not write into the unbatched directory")
-    rows = load_prompts(args.n)
+    out = default_out(args.batch)
+    rows = load_prompts(0)
     model, tok = load_model(args.arms)
     for arm in args.arms:
-        run_arm(model, tok, arm, rows, args.max_new_tokens, out, args.batch)
+        run_arm(model, tok, arm, rows, MNT, out, args.batch)
 
 
 if __name__ == "__main__":

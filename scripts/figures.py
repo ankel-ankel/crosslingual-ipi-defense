@@ -1,6 +1,5 @@
 import argparse
 import os
-import sys
 from collections.abc import Callable
 from pathlib import Path
 
@@ -10,8 +9,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import font_manager as fm
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # runs without installing
 
 from ipidefense.paths import RUNS
 from ipidefense.runner import Run, Step, main, shown, user_path

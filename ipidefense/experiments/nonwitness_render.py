@@ -6,8 +6,9 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from ipidefense.experiments.judge import kappa
 from ipidefense.experiments.nonemission import FORMAT_ATTACKS
-from ipidefense.experiments.review import atomic_write, kappa, load_votes, refuse_overwrite
+from ipidefense.experiments.review import atomic_write, load_votes, refuse_overwrite
 from ipidefense.experiments.suite import CHAT_TOKENS, load_renderings, qa_ok
 from ipidefense.experiments.taskacc import note
 from ipidefense.paths import DATA

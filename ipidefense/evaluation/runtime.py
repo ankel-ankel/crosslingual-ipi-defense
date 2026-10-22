@@ -15,7 +15,6 @@ from scipy.stats import binomtest
 
 from ipidefense import paths
 from ipidefense.arms import ADAPTER_SEED, ADAPTERS, BASE_DIRS, arms_base, check_adapter_base
-from ipidefense.attacks.recipes import struq_filter
 from ipidefense.evaluation.ifeval_logged import check_adapters, load_base
 from ipidefense.gpumem import lean_kwargs, release
 from ipidefense.metrics.scoring import classify
@@ -26,16 +25,14 @@ from ipidefense.utils import Item, Transcript, write_json
 
 LOG = logging.getLogger(__name__)
 ScoreFn = Callable[[Item, str], dict]
-FILTER_SUFFIX = "+filter"
 
 
 @dataclass(frozen=True)
 class Arm:
-    """An ADAPTERS entry with an optional StruQ filter."""
+    """An ADAPTERS entry."""
 
     spec: str
     name: str
-    filtered: bool
     inline: bool
     own_seed: int | None
     defended: bool
@@ -43,16 +40,11 @@ class Arm:
 
 
 def parse_arm(spec: str) -> Arm:
-    name = spec.removesuffix(FILTER_SUFFIX)
-    if name not in ADAPTERS or ADAPTERS[name][0] not in BASE_DIRS:
-        raise ValueError(f"unknown arm {spec!r}: use an ipidefense.arms.ADAPTERS name "
-                         f"(+{FILTER_SUFFIX})")
-    filtered = spec.endswith(FILTER_SUFFIX)
-    if filtered and ADAPTERS[name][0] != "qwen":
-        raise ValueError(f"{spec}: the StruQ filter strips Qwen ChatML strings (Qwen arms only)")
-    family = re.sub(r"-s\d+$", "", name) + (FILTER_SUFFIX if filtered else "")
-    return Arm(spec, name, filtered, ADAPTERS[name][2], ADAPTER_SEED[name],
-               bool(ADAPTERS[name][1]), family)
+    if spec not in ADAPTERS or ADAPTERS[spec][0] not in BASE_DIRS:
+        raise ValueError(f"unknown arm {spec!r}: use an ipidefense.arms.ADAPTERS name")
+    family = re.sub(r"-s\d+$", "", spec)
+    return Arm(spec, spec, ADAPTERS[spec][2], ADAPTER_SEED[spec],
+               bool(ADAPTERS[spec][1]), family)
 
 
 def arm_plan(specs: Sequence[str], seeds: Sequence[int]) -> list[tuple[Arm, int]]:
@@ -88,11 +80,8 @@ def load_eval_model(arms: Iterable[Arm]) -> tuple[Any, Any]:
 
 
 def messages_for(item: Item, arm: Arm) -> list[dict]:
-    """build_messages plus the StruQ filter and the late user turn."""
-    data = item.data
-    if arm.filtered and data is not None:
-        data = struq_filter(data)
-    msgs = build_messages(item.instruction, data, arm.inline)
+    """build_messages plus the late user turn."""
+    msgs = build_messages(item.instruction, item.data, arm.inline)
     late = item.meta.get("late_user")
     return [*msgs, {"role": "user", "content": late}] if late else msgs
 
@@ -122,7 +111,7 @@ def generate_msgs(model: Any, tok: Any, msgs_list: list[list[dict]], mnt: int) -
     return recs
 
 
-def freeze_design(out_dir: Path, design: dict, invocation: dict) -> str:
+def freeze_design(out_dir: Path, design: dict, invocation: dict) -> None:
     """Write design.json once, later runs must match it."""
     path = out_dir / "design.json"
     digest = hashlib.sha1(json.dumps(design, sort_keys=True, ensure_ascii=False)
@@ -135,7 +124,6 @@ def freeze_design(out_dir: Path, design: dict, invocation: dict) -> str:
                          "before re-running")
     rec["invocations"].append({"at": time.strftime("%Y-%m-%d %H:%M:%S"), **invocation})
     write_json(path, rec)
-    return digest
 
 
 def rate(k: int, n: int) -> dict:

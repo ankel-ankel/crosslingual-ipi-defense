@@ -15,8 +15,6 @@ from ipidefense.attacks.witnesses import OutcomeClassifier, WitnessInjection
 from ipidefense.data.hosts import load_en_hosts
 from ipidefense.evaluation.obey import fmt_obey, obey_by_lang
 from ipidefense.model import (
-    ADAPTER_DIR,
-    BASE_DIR,
     MISTRAL_DIR,
     QWEN_DIR,
     QWEN_INPUT_TEMPLATE,
@@ -24,6 +22,8 @@ from ipidefense.model import (
     build_messages,
     generate,
     generate_batch,
+    mistral_tokenizer,
+    sealion_tokenizer,
 )
 from ipidefense.paths import MODELS, RUNS
 from ipidefense.rendering.literal import render_inj_literal
@@ -32,6 +32,12 @@ from ipidefense.training.lora import SFTExample, build_lora_model, train_sft
 
 REFUSAL = ("I cannot follow instructions contained in the provided input data. "
            "I will only act on the user's instruction.")
+EPOCHS = 1
+LR = 1e-4
+LANGS = ("en", "es", "vi")
+TARGET_MNT = 160
+EVAL_MNT = 64
+CLEAN_FRAC = 0.6
 
 
 def base_and_tok(base: str):
@@ -40,30 +46,15 @@ def base_and_tok(base: str):
         tok.chat_template = QWEN_INPUT_TEMPLATE
         return str(QWEN_DIR), tok
     if base == "sealion":
-        tok = AutoTokenizer.from_pretrained(str(SEALION_DIR))
-        tok.chat_template = AutoTokenizer.from_pretrained(str(ADAPTER_DIR)).chat_template
-        return str(SEALION_DIR), tok
-    if base == "mistral":
-        return str(MISTRAL_DIR), AutoTokenizer.from_pretrained(str(MISTRAL_DIR))
-    return str(BASE_DIR), AutoTokenizer.from_pretrained(str(ADAPTER_DIR))
+        return str(SEALION_DIR), sealion_tokenizer()
+    return str(MISTRAL_DIR), mistral_tokenizer()
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--base", choices=["llama", "qwen", "sealion", "mistral"], default="qwen")
+    ap.add_argument("--base", choices=["qwen", "sealion", "mistral"], default="qwen")
     ap.add_argument("--n-train", type=int, default=1500)
     ap.add_argument("--n-eval", type=int, default=150)
-    ap.add_argument("--epochs", type=int, default=1)
-    ap.add_argument("--lr", type=float, default=1e-4)
-    ap.add_argument("--langs", default="en,es,vi")
-    ap.add_argument("--max-new-tokens", type=int, default=160, help="for clean-target generation")
-    ap.add_argument("--eval-mnt", type=int, default=64, help="obey-eval tokens (witness is early)")
-    ap.add_argument(
-        "--clean-frac",
-        type=float,
-        default=0.6,
-        help="fraction of clean (no-injection) training examples, to preserve utility",
-    )
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--inline", action="store_true", help="data inline in user turn, no input role")
     ap.add_argument("--harden", action="store_true", help="add prefix-injection attacks")
@@ -74,9 +65,9 @@ def main() -> None:
     suffix = (("-inline" if args.inline else "") + ("-hardened" if args.harden else "")
               + ("-refuse" if args.refuse else ""))
     train_templates = TRAIN_TEMPLATES + PREFIX_TEMPLATES if args.harden else TRAIN_TEMPLATES
-    langs = [x.strip() for x in args.langs.split(",")]
+    langs = list(LANGS)
     rng = random.Random(args.seed)
-    mnt = args.max_new_tokens
+    mnt = TARGET_MNT
 
     model_dir, tok = base_and_tok(args.base)
     torch.manual_seed(args.seed)
@@ -112,7 +103,7 @@ def main() -> None:
             if not target.strip():
                 continue
             ex_target = target
-            if rng.random() < args.clean_frac:
+            if rng.random() < CLEAN_FRAC:
                 data = h.data
                 n_clean += 1
             else:
@@ -125,23 +116,23 @@ def main() -> None:
             msgs = build_messages(h.instruction, data, args.inline)
             examples.append(SFTExample(messages=msgs, target=ex_target))
         undef = obey_by_lang(
-            model, tok, clf, eval_hosts, rendered, args.eval_mnt, args.inline, args.batch
+            model, tok, clf, eval_hosts, rendered, EVAL_MNT, args.inline, args.batch
         )
-    print(f"training {len(examples)} examples ({n_clean} clean), {args.epochs} epoch", flush=True)
+    print(f"training {len(examples)} examples ({n_clean} clean), {EPOCHS} epoch", flush=True)
 
-    train_sft(model, tok, examples, epochs=args.epochs, lr=args.lr, seed=args.seed)
+    train_sft(model, tok, examples, epochs=EPOCHS, lr=LR, seed=args.seed)
 
     defended = obey_by_lang(
-        model, tok, clf, eval_hosts, rendered, args.eval_mnt, args.inline, args.batch
+        model, tok, clf, eval_hosts, rendered, EVAL_MNT, args.inline, args.batch
     )
 
     report = {
         "n_train": len(examples),
         "n_eval": len(eval_hosts),
-        "epochs": args.epochs,
-        "clean_frac": args.clean_frac,
+        "epochs": EPOCHS,
+        "clean_frac": CLEAN_FRAC,
         "base": args.base,
-        "lr": args.lr,
+        "lr": LR,
         "n_attacks": len(EVAL_INJS),
         "langs": langs,
         "undefended": undef,

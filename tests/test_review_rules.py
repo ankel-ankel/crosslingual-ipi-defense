@@ -39,6 +39,7 @@ def _cache(tids: list[str], hard: set[str]) -> dict:
 def ren(tmp_path, monkeypatch):
     """Review module on a temp renderings dir, with stored QA flags."""
     monkeypatch.setattr(rl, "REN", tmp_path)
+    monkeypatch.setattr(su, "RENDER_DIR", tmp_path)
     monkeypatch.setattr(rl, "WORK", tmp_path / "review_worklist.json")
     monkeypatch.setattr(rl, "SUPP", tmp_path / "review_worklist_supp.json")
     monkeypatch.setattr(rl, "LANGS", ("ko",))

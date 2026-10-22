@@ -1,4 +1,3 @@
-import argparse
 import json
 import statistics
 from collections import defaultdict
@@ -16,6 +15,10 @@ N_PROMPTS = 541
 EOS_BAND = (140, 180)
 MID_SENTENCE_END = set(",;:-")
 N_LONG = 15  # long-answer instructions, dropped in the sensitivity run
+IFEVAL_DIR = RUNS / "ifeval_logged"
+UNDEF = "undef"
+ARMS = ("def-s0", "def-s1", "def-s2")
+N_BOOT = 10_000
 
 
 def load_arm(path: Path) -> dict[int, dict]:
@@ -167,23 +170,16 @@ def analyze(undef: dict[int, dict], arms: Sequence[dict[int, dict]], labels: lis
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--dir", type=Path, default=RUNS / "ifeval_logged")
-    ap.add_argument("--undef", default="undef")
-    ap.add_argument("--arms", nargs="+", default=["def-s0", "def-s1", "def-s2"])
-    ap.add_argument("--boot", type=int, default=10_000)
-    ap.add_argument("--out", type=Path)
-    args = ap.parse_args()
     labels = json.loads(LABELS.read_text(encoding="utf-8"))["labels"]
-    undef = load_arm(args.dir / f"{args.undef}.jsonl")
-    arms = [load_arm(args.dir / f"{a}.jsonl") for a in args.arms]
-    res = analyze(undef, arms, labels, args.boot)
+    undef = load_arm(IFEVAL_DIR / f"{UNDEF}.jsonl")
+    arms = [load_arm(IFEVAL_DIR / f"{a}.jsonl") for a in ARMS]
+    res = analyze(undef, arms, labels, N_BOOT)
     if res["sensitivity_without_long"]["n_dropped"] != N_LONG:
         raise SystemExit(f"expected {N_LONG} long instructions, got "
                          f"{res['sensitivity_without_long']['n_dropped']}")
-    res = {"dir": str(args.dir), "undef": args.undef, "arms": args.arms, "n_boot": args.boot,
+    res = {"dir": str(IFEVAL_DIR), "undef": UNDEF, "arms": list(ARMS), "n_boot": N_BOOT,
            "labels_file": str(LABELS), **res}
-    out = args.out or args.dir / f"breakdown_{'_'.join(args.arms)}.json"
+    out = IFEVAL_DIR / f"breakdown_{'_'.join(ARMS)}.json"
     write_json(out, res)
     print(json.dumps({"subsets": {k: v["delta"] for k, v in res["subsets"].items()},
                       "hypotheses": res["hypotheses"]}, indent=1))

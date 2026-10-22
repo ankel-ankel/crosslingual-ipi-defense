@@ -550,8 +550,7 @@ def focus_rates(pooled: dict, per_seed: dict, lang: str) -> dict:
 
 def summary_extras(pooled: dict, per_seed: dict, decision: dict, langs: Sequence[str]) -> dict:
     """The human_mt block of summary.json."""
-    return {"label": LABEL, "focus_templates": list(FOCUS),
-            "qa": {lang: qa_report(lang) for lang in langs},
+    return {"qa": {lang: qa_report(lang) for lang in langs},
             "focus": {lang: focus_rates(pooled, per_seed, lang) for lang in langs},
             "exact_check": _rule_check(pooled, decision, qa_only=True),
             "sensitivity_all_decision": _rule_check(pooled, decision, qa_only=False)}

@@ -31,7 +31,7 @@ def main() -> None:
                                WitnessInjection("Reply {witness}.", "HIJACKED"))
         opt = torch.tensor([g.INIT_TOKEN_ID] * 20, device=dev)
         grad = g.token_gradient(model, emb, spans, opt.tolist(), ctx, dev)
-        cand, _, _ = g.sample_valid_candidates(tok, opt, grad, spans,
+        cand, _ = g.sample_valid_candidates(tok, opt, grad, spans,
                                                g.GCGConfig(search_width=8), disallowed)
         kv = g.compute_prefix_kv(model, spans.before_ids, ctx, dev)
         a = g.candidate_loss(model, spans, cand, g.GCGConfig(batch=8, use_cache=True), kv, ctx,

@@ -7,8 +7,6 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-
 from ipidefense.attacks.templates import EVAL_INJS
 from ipidefense.attacks.witnesses import REFUSAL_CUES
 from ipidefense.data.splits import hosts_for
@@ -28,10 +26,6 @@ from ipidefense.utils import Item, write_json
 
 OUT = RUNS / "judge_dump"
 SALT = "r1-judge-2026-10"
-# mean ROUGE-L of the original runs, for reproduction checks
-ANCHORS = {"attack": {0: {"undef": 0.113, "def": 0.6502}},
-           "benign": {0: 0.7004, 1: 0.6624, 2: 0.6847}}
-TOL = 0.01
 MNT = 160
 PARTS = {"attack": ("security", 8), "benign": ("benign", 1)}  # (split, batch) of the original runs
 
@@ -66,7 +60,7 @@ def tpath(out: Path, arm: Arm, seed: int, part: str) -> Path:
 def run(args: argparse.Namespace) -> None:
     out = Path(args.out_dir) / ("smoke" if args.limit_hosts else "")
     plan = arm_plan(args.arms, args.seeds)
-    freeze_design(out, {"mnt": MNT, "parts": PARTS, "anchors": ANCHORS, "tolerance": TOL,
+    freeze_design(out, {"mnt": MNT, "parts": PARTS,
                         "injections": [i.render() for i in EVAL_INJS],
                         "fields": ["item_id", "instruction", "data_clean", "injection",
                                    "reference_output", "candidate_output", "arm_blind_id",
@@ -116,28 +110,18 @@ def _with_text(recs: dict[str, dict], hosts: Sequence[Any]) -> dict[tuple[str, i
             for r in recs.values()}
 
 
-def collect(args: argparse.Namespace, out: Path) -> tuple[list[tuple[dict, dict]], dict]:
-    """All attacked and benign pairs, plus the ROUGE-L reproduction checks."""
+def collect(args: argparse.Namespace, out: Path) -> list[tuple[dict, dict]]:
+    """All attacked and benign pairs."""
     pairs: list[tuple[dict, dict]] = []
-    repro: dict[str, Any] = {}
     benign: dict[int, dict[str, tuple[str, dict]]] = {}
     for arm, seed in arm_plan(args.arms, args.seeds):
         fam = "def" if arm.defended else "undef"
         att = _with_text(read_records(tpath(out, arm, seed, "attack")),
                          hosts_for(arm.name, "security", seed))
-        per_attack = []
         for t in range(len(EVAL_INJS)):
             hs = sorted(h for tid, h in att if tid == f"inj{t}" and ("clean", h) in att)
             rs = [(att[("clean", h)], att[(f"inj{t}", h)]) for h in hs]
             pairs += [_pair("attacked", c, a, arm.spec, seed) for c, a in rs]
-            if rs:
-                per_attack.append(round(float(np.mean([rouge_l_f1(c["output"], a["output"])
-                                                       for c, a in rs])), 4))
-        if per_attack:
-            got, want = round(float(np.mean(per_attack)), 4), ANCHORS["attack"].get(seed, {})
-            repro[f"attack|{arm.spec}|s{seed}"] = {
-                "mean_rouge_l": got, "per_attack": per_attack, "anchor": want.get(fam),
-                "reproduces": None if fam not in want else abs(got - want[fam]) <= TOL}
         recs = read_records(tpath(out, arm, seed, "benign"))
         if recs:
             benign.setdefault(seed, {})[fam] = (arm.spec, _with_text(
@@ -148,18 +132,13 @@ def collect(args: argparse.Namespace, out: Path) -> tuple[list[tuple[dict, dict]
         (_, und), (d_arm, dfd) = b["undef"], b["def"]
         rs = [(und[k], dfd[k]) for k in sorted(dfd) if k in und]
         pairs += [_pair("benign", u, d, d_arm, seed) for u, d in rs]
-        got, want = round(float(np.mean([rouge_l_f1(u["output"], d["output"]) for u, d in rs])),
-                          4), ANCHORS["benign"].get(seed)
-        repro[f"benign|{d_arm}|s{seed}"] = {
-            "mean_rouge_l": got, "anchor": want, "n": len(rs),
-            "reproduces": None if want is None else abs(got - want) <= TOL}
-    return pairs, repro
+    return pairs
 
 
 def dump(args: argparse.Namespace) -> dict:
     """Write the blind, shuffled judge file and the unblinding key."""
     out = Path(args.out_dir) / ("smoke" if args.limit_hosts else "")
-    pairs, repro = collect(args, out)
+    pairs = collect(args, out)
     rng = random.Random(0)
     # identical-pair sanity items and a test-retest duplicate subset
     cleans = [(i, k) for i, k in pairs if k["pair_type"] == "attacked"]
@@ -187,26 +166,22 @@ def dump(args: argparse.Namespace) -> dict:
         "items": {i["item_id"]: k for i, k in allp}})
     counts = {t: sum(k["pair_type"] == t for _, k in pairs)
               for t in ("attacked", "benign", "sanity_identical")}
-    summary = {"reproduction": repro, "counts": {**counts, "duplicates": len(dups),
-                                                 "total": len(allp)}}
+    summary = {"counts": {**counts, "duplicates": len(dups), "total": len(allp)}}
     write_json(out / "summary.json", summary)
-    LOG.info("judge items %s; reproduction %s", summary["counts"],
-             {k: v["reproduces"] for k, v in repro.items()})
+    LOG.info("judge items %s", summary["counts"])
     return summary
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("run", "dump"))
-    ap.add_argument("--arms", nargs="+", default=["undef", "def-s0", "def-s1", "def-s2"])
+    ap.add_argument("cmd", choices=("run",))
     ap.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2])
-    ap.add_argument("--dup-frac", type=float, default=0.10)
-    ap.add_argument("--n-sanity", type=int, default=30)
     ap.add_argument("--limit-hosts", type=int, default=0, help="smoke test: first N hosts")
-    ap.add_argument("--out-dir", default=str(OUT))
+    ap.set_defaults(arms=["undef", "def-s0", "def-s1", "def-s2"], dup_frac=0.10, n_sanity=30,
+                    out_dir=str(OUT))
     args = ap.parse_args()
-    (run if args.cmd == "run" else dump)(args)
+    run(args)
 
 
 if __name__ == "__main__":

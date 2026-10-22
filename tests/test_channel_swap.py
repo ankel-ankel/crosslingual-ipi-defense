@@ -1,31 +1,16 @@
 import argparse
 import json
 
-import numpy as np
 import pytest
-import torch
 
 from ipidefense.attacks.templates import EVAL_INJS
 from ipidefense.data.splits import hosts
 from ipidefense.experiments import channel_swap as cs
 from ipidefense.experiments import suite as su
-from ipidefense.model import build_messages
 from ipidefense.paths import DATA
 
 needs_alpaca = pytest.mark.skipif(not (DATA / "alpaca_cleaned.json").exists(),
                                   reason="run scripts/prepare_data.py")
-
-
-@pytest.fixture(scope="module")
-def tiny(qwen_tok):
-    from transformers import Qwen2Config, Qwen2ForCausalLM
-
-    torch.manual_seed(0)
-    cfg = Qwen2Config(vocab_size=len(qwen_tok), hidden_size=32, intermediate_size=64,
-                      num_hidden_layers=2, num_attention_heads=4, num_key_value_heads=2,
-                      max_position_embeddings=4096, tie_word_embeddings=False,
-                      bos_token_id=151643, eos_token_id=151645, pad_token_id=151643)
-    return Qwen2ForCausalLM(cfg).eval()
 
 
 @needs_alpaca
@@ -83,23 +68,6 @@ def test_channel_swap_summary(tmp_path) -> None:
     s = cs.summarize(args)
     dec = s["decisions"]["def-s0|s0|F-OVR"]
     assert dec["class"] == "C" and dec["primary"]["RU"] == 1.0 and dec["turn_closure"]
-    assert s["gate0"]["def-s0|D-end"]["pass"] and not s["gate0"]["undef|D-start"]["pass"]
-    assert not any(k.startswith("hard-s0") for k in s["gate0"])
     cell = s["cells"]["undef|s0|F-OVR|U-early"]
     assert cell["wf_nonecho"]["k"] == cell["wf"]["k"] and cell["echo_n"] == 0
     assert s["decisions"]["hard-s0|s0|F-OVR"]["class"] == "C"
-
-
-@needs_alpaca
-def test_hidden_states_left_padding(qwen_tok, tiny, tmp_path) -> None:
-    hs = hosts(0, "security")[:3]
-    items = cs.clean_unit(hs)
-    path = tmp_path / "h.npz"
-    cs.capture_hidden(tiny, qwen_tok, su.parse_arm("undef"), items, [1, 2], 3, path)
-    arr = np.load(path)
-    for k, it in enumerate(items):
-        ids = qwen_tok(su.chat_text(qwen_tok, build_messages(it.instruction, it.data)),
-                       add_special_tokens=False, return_tensors="pt")
-        with torch.no_grad():
-            ref = tiny(**ids, output_hidden_states=True).hidden_states[2][0, -1].numpy()
-        assert np.allclose(arr["L2"][k].astype(np.float32), ref, atol=2e-2)

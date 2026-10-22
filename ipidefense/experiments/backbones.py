@@ -20,7 +20,6 @@ from ipidefense.arms import (
     check_adapter_base,
 )
 from ipidefense.attacks.recipes import (
-    ALPACA_JSON,
     N_TRAIN,
     RENDER_CACHE,
     CachedTranslator,
@@ -33,16 +32,13 @@ from ipidefense.evaluation.runtime import parse_arm, rate
 from ipidefense.experiments import ifeval_breakdown as bd
 from ipidefense.experiments import suite as su
 from ipidefense.experiments.backbone_rules import (
-    CENSUS_DEFS,
     CONFIGS,
     IFEVAL_BATCH,
     IFEVAL_MNT,
     N_INSTRUCTIONS,
     N_PROMPTS,
     N_SEC_HOSTS,
-    OPERATIONAL,
     PUBLISHED_CONFIG,
-    RULES,
     SEC_BATCH,
     SEC_LANGS,
     SEC_MNT,
@@ -64,22 +60,19 @@ from ipidefense.experiments.backbone_rules import (
 from ipidefense.gpumem import lean_kwargs, release
 from ipidefense.model import MISTRAL_DIR, QWEN_DIR, SEALION_DIR, build_messages
 from ipidefense.paths import DATA, MODELS, RUNS
-from ipidefense.training.lora import LORA_TARGETS, SFTExample
+from ipidefense.training.lora import SFTExample
 from ipidefense.training.sets import (
     MAX_LEN,
-    env_info,
     eos_ids,
     gen_record,
     repair_tail,
     sha256_file,
-    stamp,
     token_lengths,
     write_jsonl,
 )
 from ipidefense.training.sft import (
     LossTee,
     adapter_dir,
-    adapter_hashes,
     length_stats,
     lora_settings,
     select,
@@ -107,10 +100,7 @@ def generation_settings(bb: str) -> dict:
     """Decoding fields of a backbone's generation_config.json."""
     cfg = json.loads((MODEL_DIRS[bb] / "generation_config.json").read_text(encoding="utf-8"))
     return {"repetition_penalty": cfg.get("repetition_penalty", 1.0),
-            "eos_token_id": cfg.get("eos_token_id"),
-            "sampling_fields_ignored": {k: cfg[k] for k in ("do_sample", "temperature", "top_p",
-                                                            "top_k") if k in cfg},
-            "decoding": "greedy (do_sample=False), pad = EOS, left padding"}
+            "eos_token_id": cfg.get("eos_token_id")}
 
 
 def report_path(name: str, smoke: bool = False) -> Path:
@@ -185,11 +175,9 @@ def run_targets(path: Path, items: Sequence[Item], texts: dict[str, str],
         if all(it.key in tr.done for it in chunk):
             continue
         gen = gen or make_gen()
-        t = time.time()
         outs = gen([texts[it.key] for it in chunk])
-        sec = round((time.time() - t) / len(chunk), 3)
         tr.add([{"key": it.key, **it.meta, "instruction": it.instruction, "data": it.data,
-                 "prompt_sha": sha(texts[it.key]), "mnt": mnt, "batch": batch, **o, "sec": sec}
+                 "prompt_sha": sha(texts[it.key]), "mnt": mnt, "batch": batch, **o}
                 for it, o in zip(chunk, outs, strict=True) if it.key not in tr.done])
         n_new += len(chunk)
         if n_new % (10 * batch) < batch or n_new >= todo:
@@ -199,8 +187,7 @@ def run_targets(path: Path, items: Sequence[Item], texts: dict[str, str],
     complete = all(k in tr.done for k in keys)
     return {"n_items": len(keys), "n_done": sum(k in tr.done for k in keys),
             "generated_now": n_new, "complete": complete, "file": str(path),
-            "sha256": sha256_file(path) if complete else None,
-            "wall_s": round(time.time() - t0, 1)}
+            "sha256": sha256_file(path) if complete else None}
 
 
 def cmd_targets(bb: str, cap: int, limit: int | None = None) -> dict:
@@ -225,26 +212,24 @@ def cmd_targets(bb: str, cap: int, limit: int | None = None) -> dict:
     recs = list(Transcript(path).done.values())
     report = {"backbone": bb, "cap": cap, "batch": TARGET_BATCH, "inline": inline, "seed": SEED,
               "smoke": smoke, **stats, "stats": target_stats(recs, cap),
-              "generation": generation_settings(bb), "finished": stamp(), "env": env_info()}
+              "generation": generation_settings(bb)}
     write_json(report_path(f"targets_{bb}_cap{cap}.json", smoke), report)
     return report
 
 
 # census (CPU)
-def load_complete(path: Path, n: int | None = None) -> dict[int, dict] | None:
+def load_complete(path: Path) -> dict[int, dict] | None:
     """Target records by host if the file holds every training host, else None."""
-    n = N_TRAIN if n is None else n
     if not path.exists():
         return None
     recs = {r["host"]: r for r in Transcript(path).done.values()}
-    return recs if set(recs) == set(range(n)) else None
+    return recs if set(recs) == set(range(N_TRAIN)) else None
 
 
 def census(qwen_path: Path = QWEN_TARGETS, out: Path | None = None) -> dict:
     """Write runs/backbones/census.json from the complete target sets."""
-    res: dict[str, Any] = {"definitions": CENSUS_DEFS,
-                           "generation": {bb: generation_settings(bb) for bb in MODEL_DIRS},
-                           "backbones": {}, "missing": [], "created": stamp()}
+    res: dict[str, Any] = {"generation": {bb: generation_settings(bb) for bb in MODEL_DIRS},
+                           "backbones": {}, "missing": []}
     qwen = load_complete(qwen_path)
     if qwen is None:
         res["missing"].append(str(qwen_path))
@@ -321,7 +306,7 @@ def as_run_translator() -> tuple[Any, dict]:
     audit = audit_render(tr)
     if not audit.get("available") or audit.get("n_mismatch"):
         raise SystemExit(f"render audit failed for {RENDER_CACHE}: {audit}")
-    return tr, {"file": str(RENDER_CACHE), "sha256": sha256_file(RENDER_CACHE),
+    return tr, {"file": str(RENDER_CACHE),
                 "audit": {k: audit[k] for k in ("n_rows", "n_mismatch")}}
 
 
@@ -336,7 +321,6 @@ def cmd_train(args: argparse.Namespace) -> dict:
         raise SystemExit(f"a full run must write {backbone_adapter_dir(bb, cfg)} (registry)")
     # fail fast if the adapter name is taken
     out = None if args.dry_run else adapter_dir(run_name, args.overwrite)
-    started, t_start = stamp(), time.time()
     targets, tpath = load_targets(bb, int(spec["cap"]), args.smoke)
     tr, render = as_run_translator()
     recs = build_records(bb, cfg, targets, tr, partial=args.smoke)
@@ -344,51 +328,38 @@ def cmd_train(args: argparse.Namespace) -> dict:
     write_jsonl(data_path, recs)
     tok = backbone_tokenizer(bb)
     lens = [token_lengths(tok, r["messages"], r["target"]) for r in recs]
-    keep = select(len(recs), args.limit, args.longest, [f for _, f in lens])
+    keep = select(len(recs), args.limit, False, [f for _, f in lens])
     lstats = length_stats([lens[k] for k in keep], MAX_LEN)
     examples = [SFTExample(messages=recs[k]["messages"], target=recs[k]["target"]) for k in keep]
     kinds = Counter(recs[k]["meta"]["kind"] for k in keep)
     config = {"backbone": bb, "cfg": cfg, "run_name": run_name, "seed": SEED, "cap": spec["cap"],
-              "lr": spec["lr"], "published_config": PUBLISHED_CONFIG,
-              "base": str(MODEL_DIRS[bb]), "inline": BACKBONES[bb][1], "objective": "sft",
-              "epochs": 1, "micro_batch": 1, "accum": 8, "max_len": MAX_LEN, "clip": 1.0,
-              "optimizer": "torch.optim.AdamW (defaults), constant lr", "precision": "bf16",
-              "gradient_checkpointing": True,
-              "loss": "assistant tokens only (training.lora.encode_example)",
-              "lora_planned": {"r": 16, "alpha": 32, "dropout": 0.05,
-                               "targets": sorted(LORA_TARGETS)}}
-    data = {"file": str(data_path), "sha256": sha256_file(data_path), "n_records": len(recs),
+              "lr": spec["lr"], "base": str(MODEL_DIRS[bb]), "inline": BACKBONES[bb][1],
+              "epochs": 1, "micro_batch": 1, "accum": 8, "max_len": MAX_LEN, "clip": 1.0}
+    data = {"file": str(data_path), "n_records": len(recs),
             "n_trained": len(keep), "kinds": dict(kinds), "smoke": smoke,
             "skipped_hosts_empty_target": sorted(i for i, t in targets.items()
                                                  if not t["text"].strip()),
-            "targets": {"file": str(tpath), "sha256": sha256_file(tpath), "cap": spec["cap"],
-                        "batch": TARGET_BATCH},
-            "render_cache": render, "alpaca_sha256": sha256_file(ALPACA_JSON)}
+            "targets": {"file": str(tpath), "cap": spec["cap"], "batch": TARGET_BATCH},
+            "render_cache": render}
     LOG.info("%s: %d examples %s, %s", run_name, len(keep), dict(kinds), lstats)
     if args.dry_run:
         print(json.dumps({"config": config, "data": data, "lengths": lstats}, indent=1))
         return {"config": config, "data": data, "lengths": lstats}
     from ipidefense.training.lora import build_lora_model, train_sft
 
-    t0 = time.time()
     torch.manual_seed(SEED)  # same seeding as train.py
     model = build_lora_model(str(MODEL_DIRS[bb]))
-    t1 = time.time()
     tee = LossTee(sys.stdout)
     with contextlib.redirect_stdout(tee):  # log_every only affects printing
         train_sft(model, tok, examples, epochs=1, lr=spec["lr"], accum=8, max_len=MAX_LEN,
                   log_every=1 if smoke else 10, seed=SEED)
-    t2 = time.time()
     finite = bool(tee.losses) and all(math.isfinite(x["loss"]) for x in tee.losses)
     report: dict[str, Any] = {"config": config | {"lora": lora_settings(model)}, "data": data,
-                              "lengths": lstats, "losses": tee.losses, "finite": finite,
-                              "started": started, "finished": stamp(), "env": env_info()}
+                              "lengths": lstats, "losses": tee.losses, "finite": finite}
     if finite:
         out.mkdir(parents=True, exist_ok=True)
         model.save_pretrained(str(out))
-        report["adapter"] = {"dir": str(out), "files": adapter_hashes(out)}
-    report["wall_s"] = {"prep": round(t0 - t_start, 1), "load": round(t1 - t0, 1),
-                        "train": round(t2 - t1, 1), "total": round(time.time() - t_start, 1)}
+        report["adapter"] = {"dir": str(out)}
     write_json(report_path(f"train_{run_name}.json", smoke), report)
     if not finite:
         raise SystemExit("non-finite (or no logged) loss: adapter NOT saved")
@@ -400,13 +371,11 @@ def suite_dir(bb: str) -> Path:
     return OUT / f"suite_{bb}"
 
 
-def suite_args(bb: str, arms: Sequence[str], langs: Sequence[str],
-               limit_hosts: int = 0) -> argparse.Namespace:
+def suite_args(bb: str, arms: Sequence[str], langs: Sequence[str]) -> argparse.Namespace:
     """Arguments for suite run --exp ml1b --renderer v2."""
     return argparse.Namespace(cmd="run", exp="ml1b", renderer="v2", arms=list(arms),
-                              seeds=[SEED], langs=list(langs), batch=SEC_BATCH, mnt=SEC_MNT,
-                              limit_hosts=limit_hosts, out_dir=str(suite_dir(bb)),
-                              with_trainpool=False, no_bt=False)
+                              seeds=[SEED], langs=list(langs), batch=SEC_BATCH,
+                              out_dir=str(suite_dir(bb)), with_trainpool=False, no_bt=False)
 
 
 def require_adapters(arms: Sequence[str]) -> None:
@@ -434,21 +403,19 @@ def sec_plan(bb: str, six: bool, arms: Sequence[str] | None = None,
     return [arm(bb, k) for k in ("undef", "def", *BACKBONE_CONFIGS)], langs
 
 
-def cmd_sec(bb: str, six: bool, arms: Sequence[str] | None = None, limit_hosts: int = 0) -> None:
+def cmd_sec(bb: str, six: bool, arms: Sequence[str] | None = None) -> None:
     best = None
     if six and not arms:
-        if limit_hosts:
-            raise SystemExit("--six reads the full en/es/vi results; no --limit-hosts")
         res = backbone_results(check_backbone(bb))
         if res["rows"] is None:
             raise SystemExit(f"best config undefined, missing: {res['missing']}")
         best = best_config(res["rows"])
         write_json(OUT / f"best_{bb}.json", {
-            "backbone": bb, "best_config": best, "arm": arm(bb, best), "rule":
-            OPERATIONAL["best_config"], "configs": strip_exact(res["rows"]), "chosen": stamp()})
+            "backbone": bb, "best_config": best, "arm": arm(bb, best),
+            "configs": strip_exact(res["rows"])})
     plan_arms, langs = sec_plan(check_backbone(bb), six, arms, best)
     require_adapters(plan_arms)
-    su.run_exp(suite_args(bb, plan_arms, langs, limit_hosts))
+    su.run_exp(suite_args(bb, plan_arms, langs))
 
 
 def valid_tids(lang: str) -> list[str] | None:
@@ -517,25 +484,24 @@ def with_tax_ci(row: dict, undef: dict, ife: dict) -> dict:
     return {**row, "tax_ci95_descriptive": ci, "borderline": borderline(ci)}
 
 
-def cmd_breakdown(n_boot: int = 10_000, directory: Path = IFEVAL_DIR,
-                  out: Path = OUT) -> dict[str, str]:
+def cmd_breakdown() -> dict[str, str]:
     """IFEval breakdown of each defended backbone arm against its undefended base."""
     labels = json.loads(bd.LABELS.read_text(encoding="utf-8"))["labels"]
     status = {}
     for bb in BACKBONES:
-        undef = load_ifeval_records(arm(bb, "undef"), directory)
+        undef = load_ifeval_records(arm(bb, "undef"))
         for kind in ("def", *BACKBONE_CONFIGS):
             name = arm(bb, kind)
-            dfd = load_ifeval_records(name, directory)
+            dfd = load_ifeval_records(name)
             if undef is None or dfd is None:
                 status[name] = "pending"
                 continue
-            res = bd.analyze(undef, [dfd], labels, n_boot)
+            res = bd.analyze(undef, [dfd], labels, bd.N_BOOT)
             if res["sensitivity_without_long"]["n_dropped"] != bd.N_LONG:
                 raise SystemExit(f"expected {bd.N_LONG} long instructions")
-            write_json(out / f"breakdown_{name}.json", {
-                "dir": str(directory), "undef": arm(bb, "undef"), "arms": [name],
-                "n_boot": n_boot, "labels_file": str(bd.LABELS),
+            write_json(OUT / f"breakdown_{name}.json", {
+                "dir": str(IFEVAL_DIR), "undef": arm(bb, "undef"), "arms": [name],
+                "n_boot": bd.N_BOOT, "labels_file": str(bd.LABELS),
                 "note": "subset definitions of ifeval_breakdown.analyze, one defended seed",
                 **res})
             status[name] = "written"
@@ -614,8 +580,7 @@ def descriptive(bb: str, rows: dict | None, res: dict, suite: Path | None,
 def decide(ifeval_dir: Path = IFEVAL_DIR, runs: Path = OUT,
            suites: dict[str, Path] | None = None) -> dict:
     """Write runs/backbones/decision.json, 'pending' until every input exists."""
-    result: dict[str, Any] = {"rules": RULES, "operational": OPERATIONAL, "backbones": {},
-                              "created": stamp()}
+    result: dict[str, Any] = {"backbones": {}}
     for bb in BACKBONES:
         suite = (suites or {}).get(bb)
         res = backbone_results(bb, ifeval_dir, suite)
@@ -649,7 +614,6 @@ def main(argv: list[str] | None = None) -> None:
     p_tr.add_argument("--cfg", choices=BACKBONE_CONFIGS, required=True)
     p_tr.add_argument("--smoke", action="store_true", help="build from the smoke targets")
     p_tr.add_argument("--limit", type=int, help="smoke: train on N records")
-    p_tr.add_argument("--longest", action="store_true", help="with --limit: the N longest")
     p_tr.add_argument("--run-name")
     p_tr.add_argument("--overwrite", action="store_true")
     p_tr.add_argument("--dry-run", action="store_true", help="CPU: build and validate only")
@@ -657,9 +621,7 @@ def main(argv: list[str] | None = None) -> None:
     p_s.add_argument("--backbone", choices=sorted(BACKBONES), required=True)
     p_s.add_argument("--six", action="store_true", help="6 languages: best config + undef")
     p_s.add_argument("--arms", nargs="+", help="explicit arms (smoke)")
-    p_s.add_argument("--limit-hosts", type=int, default=0, help="smoke: first N hosts")
-    p_b = sub.add_parser("breakdown", help="CPU: IFEval breakdown of every complete backbone arm")
-    p_b.add_argument("--boot", type=int, default=10_000)
+    sub.add_parser("breakdown", help="CPU: IFEval breakdown of every complete backbone arm")
     sub.add_parser("decide", help="CPU: decision rules -> runs/backbones/decision.json")
     args = ap.parse_args(argv)
     if args.cmd == "targets":
@@ -669,9 +631,9 @@ def main(argv: list[str] | None = None) -> None:
     elif args.cmd == "train":
         cmd_train(args)
     elif args.cmd == "sec":
-        cmd_sec(args.backbone, args.six, args.arms, args.limit_hosts)
+        cmd_sec(args.backbone, args.six, args.arms)
     elif args.cmd == "breakdown":
-        cmd_breakdown(args.boot)
+        cmd_breakdown()
     else:
         decide()
 

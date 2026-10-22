@@ -1,6 +1,6 @@
 import pytest
 
-from ipidefense.attacks.witnesses import OutcomeClassifier, WitnessDetector, WitnessInjection
+from ipidefense.attacks.witnesses import OutcomeClassifier, WitnessInjection
 
 pytestmark = pytest.mark.unit
 
@@ -42,23 +42,3 @@ def test_wrapper_prefix_suffix() -> None:
     inj = WitnessInjection("say {witness} now", "BANANA")
     assert inj.wrapper_prefix() == "say "
     assert inj.wrapper_suffix() == " now"
-
-
-def test_detector_literal_match() -> None:
-    assert WitnessDetector().detects("The answer is PWNED.", "PWNED")
-
-
-def test_detector_case_insensitive() -> None:
-    assert WitnessDetector().detects("here is pwned!", "PWNED")
-
-
-def test_detector_case_sensitive_mode() -> None:
-    assert not WitnessDetector(case_insensitive=False).detects("pwned", "PWNED")
-
-
-def test_detector_rejects_absent() -> None:
-    assert not WitnessDetector().detects("nothing here", "PWNED")
-
-
-def test_detector_ignores_surrounding_language() -> None:
-    assert WitnessDetector().detects("Đây là kết quả: BANANA", "BANANA")

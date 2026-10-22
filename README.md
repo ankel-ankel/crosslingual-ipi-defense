@@ -18,6 +18,7 @@ Requirements: Python 3.11 or newer and one GPU with 32 GB of memory.
 # 1. install
 pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu128
 pip install -r requirements.txt
+pip install -e .
 
 # 2. download the base model into models/
 hf download Qwen/Qwen2.5-7B-Instruct --local-dir models/Qwen2.5-7B-Instruct
@@ -42,8 +43,7 @@ reply = generate(model, tok, instruction="Summarize the text below.", data=docum
 ```
 
 The untrusted data go in a separate `input` turn of the chat template, after the user's
-instruction (see `build_messages` in `ipidefense/model.py`). Run Python from the repository root,
-or install the package first with `pip install -e .`.
+instruction (see `build_messages` in `ipidefense/model.py`).
 
 ## Reproducing the paper
 

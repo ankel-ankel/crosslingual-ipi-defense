@@ -14,14 +14,13 @@ ADAPTERS: dict[str, tuple[str, str, bool]] = {
     "hard-s1": ("qwen", "defense-qwen-seed1-hardened", False),
     "inline-s0": ("qwen", "defense-qwen-seed0-inline", True),
     "undef-inline": ("qwen", "", True),
-    "refuse-s0": ("qwen", "defense-qwen-seed0-refuse", False),
 }
 
 # adapters are only evaluated on slices of their own training seed
 ADAPTER_SEED: dict[str, int | None] = {
     "undef": None, "undef-inline": None,
     "def-s0": 0, "def-s1": 1, "def-s2": 2, "hard-s0": 0, "hard-s1": 1,
-    "inline-s0": 0, "refuse-s0": 0,
+    "inline-s0": 0,
 }
 
 # backbone -> base model dir under MODELS

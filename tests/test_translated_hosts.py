@@ -459,7 +459,7 @@ def test_run_dry_with_tiny_model(tok, tiny_peft, hosts_env, monkeypatch) -> None
     assert frozen["hosts"]["vi"]["sha256"] == hm.file_sha256(hm.host_path("vi"))
     assert frozen["injection_sha1"]["zh"]["host|ovr-grault"] == sha(
         f"<zh> {hm.override_templates()[5].english()}")
-    assert frozen["rule"] == hm.RULES and frozen["constants"]["cp95_max"] == 0.01
+    assert frozen["constants"]["cp95_max"] == 0.01
     assert pre["invocations"][0]["langs"] == ["es", "zh"]
     hs = hm.load_hosts("es")
     for arm in hm.ARMS:

@@ -191,14 +191,11 @@ def main() -> None:
     ap.add_argument("files", nargs="*")
     ap.add_argument("--dump", type=Path, default=DUMP,
                     help="judge items, key and passes (default: data/judge)")
-    ap.add_argument("--out", type=Path, default=None,
-                    help="output directory (default: runs/judge_dump for data/judge, else --dump)")
     ap.add_argument("--pass", dest="pass_", choices=("A", "B"))
-    ap.add_argument("--size", type=int, default=60)
     args = ap.parse_args()
-    out = args.out or (OUT if args.dump.resolve() == DUMP.resolve() else args.dump)
+    out = OUT if args.dump.resolve() == DUMP.resolve() else args.dump
     if args.cmd == "split":
-        split(args.dump, args.pass_, args.size, out)
+        split(args.dump, args.pass_, 60, out)
     elif args.cmd == "merge":
         sys.exit(merge(args.dump, args.pass_, args.files, out))
     else:

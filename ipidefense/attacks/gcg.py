@@ -1,5 +1,4 @@
 import contextlib
-import time
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
 
@@ -37,25 +36,19 @@ class GCGConfig:
     seed: int = 0
     init_token_id: int = INIT_TOKEN_ID
     use_cache: bool = True  # False = full forward, no prefix cache
-    early_stop: bool = True
-    allow_non_ascii: bool = False
-    universal_add_every: int = 50  # not read by the loops
 
     def as_dict(self) -> dict[str, object]:
         return asdict(self)
 
 
 # tokens and spans
-def build_disallowed_ids(
-    tok: PreTrainedTokenizerBase, embed_rows: int, allow_non_ascii: bool = False
-) -> Tensor:
+def build_disallowed_ids(tok: PreTrainedTokenizerBase, embed_rows: int) -> Tensor:
     # specials, pad rows and non-ASCII or non-printable tokens
     blocked = set(range(QWEN_SPECIAL_FLOOR, embed_rows))
-    if not allow_non_ascii:
-        for tid in range(QWEN_SPECIAL_FLOOR):
-            piece = tok.decode([tid])
-            if not (piece.isascii() and piece.isprintable()):
-                blocked.add(tid)
+    for tid in range(QWEN_SPECIAL_FLOOR):
+        piece = tok.decode([tid])
+        if not (piece.isascii() and piece.isprintable()):
+            blocked.add(tid)
     return torch.tensor(sorted(blocked), dtype=torch.long)
 
 
@@ -150,7 +143,7 @@ def sample_valid_candidates(
     cfg: GCGConfig,
     disallowed: Tensor,
     max_rounds: int = 16,
-) -> tuple[Tensor, int, int]:
+) -> tuple[Tensor, int]:
     # oversample until search_width candidates pass, else keep the current suffix
     collected: list[Tensor] = []
     seen: set[tuple[int, ...]] = set()
@@ -169,9 +162,9 @@ def sample_valid_candidates(
                 seen.add(key)
                 collected.append(row)
     if not collected:
-        return optim.unsqueeze(0), 0, rounds
+        return optim.unsqueeze(0), 0
     stacked = torch.stack(collected[: cfg.search_width])
-    return stacked, stacked.shape[0], rounds
+    return stacked, stacked.shape[0]
 
 
 # forward passes
@@ -327,7 +320,6 @@ def attack_host(
     cfg: GCGConfig,
     arm_ctx: ArmCtx,
     host_index: int,
-    on_event: Callable[[dict], None] | None = None,
 ) -> dict[str, object]:
     # stop at the first witness-first check, misses are re-checked at penalty 1.0
     device = embed_w.device
@@ -339,21 +331,15 @@ def attack_host(
         prefix_kv = compute_prefix_kv(model, spans.before_ids, arm_ctx, device)
     allowed_steps = check_steps(cfg)
     loss_trace: list[float] = []
-    n_valid_trace: list[int] = []
-    sec_per_step: list[float] = []
     checks: list[dict] = []
     first_step: dict[str, int | None] = {"wf": None, "rf": None, "starts_with": None}
-    t0 = time.time()
     for step in range(1, cfg.steps + 1):
-        step_t0 = time.time()
         grad = token_gradient(model, embed_w, spans, optim.tolist(), arm_ctx, device)
-        filtered, n_valid, _ = sample_valid_candidates(tok, optim, grad, spans, cfg, disallowed)
+        filtered, n_valid = sample_valid_candidates(tok, optim, grad, spans, cfg, disallowed)
         losses = candidate_loss(model, spans, filtered, cfg, prefix_kv, arm_ctx, device)
         best = int(losses.argmin())
         optim = filtered[best]
         loss_trace.append(float(losses[best]))
-        n_valid_trace.append(n_valid)
-        sec_per_step.append(round(time.time() - step_t0, 3))
         if step in allowed_steps:
             suffix_str = tok.decode(optim.tolist())
             labels, resp = run_check(
@@ -369,7 +355,6 @@ def attack_host(
                 "suffix": suffix_str,
                 "suffix_ids": optim.tolist(),
                 "n_valid": n_valid,
-                "sec_per_step": sec_per_step[-1],
             }
             if labels["wf"] != "obeyed":
                 labels_rp1, resp_rp1 = run_check(
@@ -385,7 +370,7 @@ def attack_host(
                 first_step["rf"] = step
             if first_step["starts_with"] is None and labels["starts_with"] is True:
                 first_step["starts_with"] = step
-            if cfg.early_stop and labels["starts_with"] is True:
+            if labels["starts_with"] is True:
                 break
     record = {
         "host_index": host_index,
@@ -401,13 +386,8 @@ def attack_host(
         "final_suffix": tok.decode(optim.tolist()),
         "final_suffix_ids": optim.tolist(),
         "loss_trace": loss_trace,
-        "n_valid_trace": n_valid_trace,
-        "sec_per_step": sec_per_step,
         "checks": checks,
-        "wall_seconds": round(time.time() - t0, 2),
     }
-    if on_event is not None:
-        on_event(record)
     return record
 
 
@@ -420,7 +400,6 @@ def attack_universal(
     injections: Sequence[WitnessInjection],
     cfg: GCGConfig,
     arm_ctx: ArmCtx,
-    on_event: Callable[[dict], None] | None = None,
 ) -> dict[str, object]:
     # one suffix for several hosts (Zou et al. 2023), hosts join one at a time
     device = embed_w.device
@@ -436,7 +415,6 @@ def attack_universal(
     active = 1
     loss_trace: list[float] = []
     inclusion: list[dict] = []
-    t0 = time.time()
     for step in range(1, cfg.steps + 1):
         grad = sum(
             token_gradient(model, embed_w, spans[i], optim.tolist(), arm_ctx, device)
@@ -478,8 +456,5 @@ def attack_universal(
         "final_suffix_ids": optim.tolist(),
         "loss_trace": loss_trace,
         "inclusion": inclusion,
-        "wall_seconds": round(time.time() - t0, 2),
     }
-    if on_event is not None:
-        on_event(record)
     return record

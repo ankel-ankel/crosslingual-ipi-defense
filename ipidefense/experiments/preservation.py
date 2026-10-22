@@ -10,6 +10,11 @@ from ipidefense.metrics.scoring import rouge_l_f1
 from ipidefense.model import generate_batch, load_defense_lora_qwen
 from ipidefense.paths import MODELS, RUNS
 
+N_TRAIN = 1500  # offset so eval hosts are held out
+N = 150
+MNT = 160
+BATCH = 8
+
 
 @torch.no_grad()
 def answers(model, tok, items: list[tuple[str, str]], mnt: int, batch: int) -> list[str]:
@@ -43,30 +48,25 @@ def arm_report(model, tok, clf: OutcomeClassifier, hosts, mnt: int, batch: int) 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--lora-dir", default=str(MODELS / "defense-qwen-seed0"))
-    ap.add_argument("--n-train", type=int, default=1500, help="offset so eval hosts are held out")
-    ap.add_argument("--n", type=int, default=150)
-    ap.add_argument("--max-new-tokens", type=int, default=160)
     ap.add_argument("--seed", type=int, default=0, help="host-split seed, match the adapter's seed")
-    ap.add_argument("--batch", type=int, default=8)
     args = ap.parse_args()
 
     model, tok = load_defense_lora_qwen(args.lora_dir)
     clf = OutcomeClassifier()
-    hosts = load_en_hosts(args.n_train + args.n, args.seed)[args.n_train :]
-    mnt = args.max_new_tokens
+    hosts = load_en_hosts(N_TRAIN + N, args.seed)[N_TRAIN:]
 
     print("undefended arm", flush=True)
     with model.disable_adapter():
-        undef = arm_report(model, tok, clf, hosts, mnt, args.batch)
+        undef = arm_report(model, tok, clf, hosts, MNT, BATCH)
     print("defended arm", flush=True)
-    defended = arm_report(model, tok, clf, hosts, mnt, args.batch)
+    defended = arm_report(model, tok, clf, hosts, MNT, BATCH)
 
     report = {
         "lora_dir": args.lora_dir,
         "seed": args.seed,
         "n_hosts": len(hosts),
         "n_attacks": len(EVAL_INJS),
-        "mnt": mnt,
+        "mnt": MNT,
         "note": "ROUGE-L of each arm's injected-data answer vs the SAME arm's clean-data answer",
         "undefended": undef,
         "defended": defended,

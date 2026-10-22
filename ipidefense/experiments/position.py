@@ -8,10 +8,9 @@ from ipidefense.attacks.witnesses import OutcomeClassifier
 from ipidefense.data.hosts import load_en_hosts
 from ipidefense.model import generate_batch, load_defense_lora_qwen
 from ipidefense.paths import MODELS, RUNS
-from ipidefense.rendering.literal import render_inj_literal
-from ipidefense.rendering.nllb import NLLBTranslator
 
 POSITIONS = ("start", "middle", "end")
+N_TRAIN, N_EVAL, MNT, BATCH = 1500, 150, 64, 8
 
 
 def place(data: str, inj: str, position: str) -> str:
@@ -40,22 +39,14 @@ def obey_rate(
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--lora-dir", default=str(MODELS / "defense-qwen-seed0"))
-    ap.add_argument("--langs", default="en")
-    ap.add_argument("--n-train", type=int, default=1500, help="offset so eval hosts are held out")
-    ap.add_argument("--n", type=int, default=150)
-    ap.add_argument("--eval-mnt", type=int, default=64)
     ap.add_argument("--seed", type=int, default=0, help="host-split seed, match the adapter's seed")
-    ap.add_argument("--batch", type=int, default=8, help="obey is batch-invariant on Qwen")
     args = ap.parse_args()
-    langs = [x.strip() for x in args.langs.split(",")]
+    langs = ["en"]
 
     model, tok = load_defense_lora_qwen(args.lora_dir)
     clf = OutcomeClassifier()
-    tr = NLLBTranslator()
-    hosts = load_en_hosts(args.n_train + args.n, args.seed)[args.n_train :]
-    rendered = {
-        ll: [(render_inj_literal(tr, inj, ll), inj.witness) for inj in EVAL_INJS] for ll in langs
-    }
+    hosts = load_en_hosts(N_TRAIN + N_EVAL, args.seed)[N_TRAIN:]
+    rendered = {"en": [(inj.render(), inj.witness) for inj in EVAL_INJS]}
 
     report: dict = {
         "lora_dir": args.lora_dir,
@@ -71,10 +62,8 @@ def main() -> None:
             undef_pa, def_pa = [], []
             for txt, w in rendered[ll]:
                 with model.disable_adapter():
-                    undef_pa.append(obey_rate(model, tok, clf, hosts, txt, w, pos,
-                                              args.eval_mnt, args.batch))
-                def_pa.append(obey_rate(model, tok, clf, hosts, txt, w, pos,
-                                        args.eval_mnt, args.batch))
+                    undef_pa.append(obey_rate(model, tok, clf, hosts, txt, w, pos, MNT, BATCH))
+                def_pa.append(obey_rate(model, tok, clf, hosts, txt, w, pos, MNT, BATCH))
             block[ll] = {
                 "undefended": {"mean": round(sum(undef_pa) / len(undef_pa), 3),
                                "per_attack": undef_pa},

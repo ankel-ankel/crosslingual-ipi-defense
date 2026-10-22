@@ -1,4 +1,3 @@
-import argparse
 import contextlib
 import json
 from fractions import Fraction
@@ -11,7 +10,7 @@ import torch.nn.functional as F
 from peft.tuners.lora.layer import Linear as LoraLinear
 
 from ipidefense.data.hosts import HostTask
-from ipidefense.data.splits import hosts
+from ipidefense.data.splits import hosts, hosts_for
 from ipidefense.experiments import lora_mask as lm
 from ipidefense.experiments.suite import generate_msgs
 from ipidefense.paths import DATA
@@ -384,10 +383,6 @@ def test_wrong_paths_are_refused(qwen_tok, lora) -> None:
     with pytest.raises(RuntimeError, match="no LoRA Linear"), lm.LoraMask(lora, "def-s9"):
         pass
     assert _hook_counts(lora) == before
-    with pytest.raises(ValueError, match="Qwen input-role adapters"):
-        lm.validate_adapters(["inline-s0"])
-    with pytest.raises(ValueError, match="Qwen input-role adapters"):
-        lm.validate_adapters(["sealion-def-s0"])
 
 
 def test_non_linear_lora_module_is_refused(qwen_tok) -> None:
@@ -492,17 +487,19 @@ def _localized(test: str, cond: str, h: int) -> bool:
     return h < restored[cond]
 
 
-def _summarize(tmp_path: Path, adapters) -> dict:
-    return lm.summarize(argparse.Namespace(adapters=list(adapters), limit_hosts=N_HOSTS,
-                                           out_dir=str(tmp_path)))
+def _summarize(monkeypatch, tmp_path: Path, adapters) -> dict:
+    monkeypatch.setattr(lm, "OUT", tmp_path)
+    monkeypatch.setattr(lm, "ADAPTER_CHOICES", tuple(adapters))
+    monkeypatch.setattr(lm, "hosts_for", lambda arm, split: hosts(0, split)[:N_HOSTS])
+    return lm.summarize()
 
 
 @needs_alpaca
-def test_summary_valid_rf_outcome_and_pooling(tmp_path) -> None:
+def test_summary_valid_rf_outcome_and_pooling(tmp_path, monkeypatch) -> None:
     for a in lm.ADAPTER_CHOICES:  # hard-s0 also has 2 extra hosts from an older smoke run
-        _write_synthetic(tmp_path / "smoke", a, _localized,
+        _write_synthetic(tmp_path, a, _localized,
                          n_hosts=N_HOSTS + 2 if a == "hard-s0" else N_HOSTS)
-    s = _summarize(tmp_path, lm.ADAPTER_CHOICES)
+    s = _summarize(monkeypatch, tmp_path, lm.ADAPTER_CHOICES)
     for a in lm.ADAPTER_CHOICES:
         p = s["adapters"][a]
         assert p["status"] == "valid" and p["gates"]["none"]["text_identical"] == 30
@@ -519,34 +516,32 @@ def test_summary_valid_rf_outcome_and_pooling(tmp_path) -> None:
 
 
 @needs_alpaca
-def test_failed_gate_refuses_rf(tmp_path) -> None:
-    out = tmp_path / "smoke"
-    _write_synthetic(out, "def-s0", _localized)
+def test_failed_gate_refuses_rf(tmp_path, monkeypatch) -> None:
+    _write_synthetic(tmp_path, "def-s0", _localized)
     # def-s1 flips one wf label in 'none', def-s2 one rf label in 'all'
-    _write_synthetic(out, "def-s1", _localized,
+    _write_synthetic(tmp_path, "def-s1", _localized,
                      {("D-end", "none", "ovr-zeroday", 3): "Sure: ZERODAY"})
-    _write_synthetic(out, "def-s2", _localized,
+    _write_synthetic(tmp_path, "def-s2", _localized,
                      {("D-end", "all", "ovr-override", 0): "I cannot comply. OVERRIDE"})
-    s = _summarize(tmp_path, lm.POOLED)
+    s = _summarize(monkeypatch, tmp_path, lm.POOLED)
     assert s["adapters"]["def-s0"]["status"] == "valid"
     for a, cond, key in (("def-s1", "none", "ovr-zeroday|3"), ("def-s2", "all", "ovr-override|0")):
         p = s["adapters"][a]
         assert p["status"] == "invalid" and p["gates"][cond]["label_mismatches"] == [key]
-        assert "refused" in p and not {"RF", "D-end", "U-early", "outcome"} & set(p)
+        assert not {"RF", "D-end", "U-early", "outcome"} & set(p)
         assert s["outcomes"][a] == "invalid"
     assert s["pooled_def"]["status"] == "invalid" and "RF" not in s["pooled_def"]
     assert s["outcomes"]["def-pooled"] == "invalid"
 
 
 @needs_alpaca
-def test_incomplete_gate_cells_report_nothing(tmp_path) -> None:
-    out = tmp_path / "smoke"
-    _write_synthetic(out, "def-s0", _localized)
-    path = lm.transcript_path(out, "def-s0")
+def test_incomplete_gate_cells_report_nothing(tmp_path, monkeypatch) -> None:
+    _write_synthetic(tmp_path, "def-s0", _localized)
+    path = lm.transcript_path(tmp_path, "def-s0")
     lines = [ln for ln in path.read_text(encoding="utf-8").splitlines()
              if not ln.startswith('{"key": "D-end|all|ovr-hijacked|4"')]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    p = _summarize(tmp_path, ["def-s0"])["adapters"]["def-s0"]
+    p = _summarize(monkeypatch, tmp_path, ["def-s0"])["adapters"]["def-s0"]
     assert p["status"] == "incomplete" and p["gates"]["all"]["status"] == "incomplete"
     assert "RF" not in p and p["cells_done"]["D-end|all"] == 29
 
@@ -556,35 +551,33 @@ def test_incomplete_gate_cells_report_nothing(tmp_path) -> None:
 def test_run_dry_with_tiny_peft(qwen_tok, lora, tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(lm, "load_eval_model", lambda arms: (lora, qwen_tok))
     monkeypatch.setattr(lm, "MNT", 3)
-    args = argparse.Namespace(adapters=["def-s0", "hard-s0"], batch=4, limit_hosts=2,
-                              out_dir=str(tmp_path))
-    lm.run(args)
-    smoke = tmp_path / "smoke"
-    pre = json.loads((smoke / "design.json").read_text(encoding="utf-8"))
-    assert pre["design"]["batch"] == 4 and pre["design"]["mnt"] == 3
-    assert pre["invocations"][0]["generations"] == 2 * 13 * 3 * 2
+    monkeypatch.setattr(lm, "BATCH", 4)
+    monkeypatch.setattr(lm, "OUT", tmp_path)
+    monkeypatch.setattr(lm, "ADAPTER_CHOICES", ("def-s0", "hard-s0"))
+    monkeypatch.setattr(lm, "hosts_for", lambda arm, split: hosts_for(arm, split)[:2])
+    lm.run()
     for a in ("def-s0", "hard-s0"):
-        recs = lm.read_records(lm.transcript_path(smoke, a))
+        recs = lm.read_records(lm.transcript_path(tmp_path, a))
         assert len(recs) == 13 * 3 * 2
         assert {r["n_hooked"] for r in recs.values() if r["hooked"]} == {14}
         assert {r["mask_sha"] for r in recs.values() if not r["hooked"]} == {"-"}
-    s = json.loads((smoke / "summary.json").read_text(encoding="utf-8"))
+    s = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
     for a in ("def-s0", "hard-s0"):
         p = s["adapters"][a]
         assert p["status"] == "valid", p["gates"]
         assert p["gates"]["none"]["text_identical"] == p["gates"]["all"]["text_identical"] == 6
-        assert p["outcome"] in lm.OUTCOMES
+        assert p["outcome"] in {"localization", "readout", "distributed", "undefined", "incomplete"}
     assert s["pooled_def"]["status"] == "not run"
-    path = lm.transcript_path(smoke, "def-s0")
+    path = lm.transcript_path(tmp_path, "def-s0")
     stamp = path.stat().st_mtime_ns
-    lm.run(args)  # resume: nothing is regenerated
+    lm.run()  # resume: nothing is regenerated
     assert path.stat().st_mtime_ns == stamp
     recs = path.read_text(encoding="utf-8").splitlines()
     first = json.loads(recs[-1])
     path.write_text("\n".join([*recs[:-1], json.dumps({**first, "mask_sha": "x"})]) + "\n",
                     encoding="utf-8")
     with pytest.raises(RuntimeError, match="another prompt, mask or settings"):
-        lm.run(args)
+        lm.run()
 
 
 @needs_alpaca
@@ -600,13 +593,14 @@ def test_run_stops_after_a_failed_gate(qwen_tok, lora, tmp_path, monkeypatch) ->
         return (out if res is None else res) * 0.5
 
     monkeypatch.setattr(lm.LoraMask, "_on_delta", halved)
-    args = argparse.Namespace(adapters=["def-s0", "hard-s0"], batch=4, limit_hosts=2,
-                              out_dir=str(tmp_path))
+    monkeypatch.setattr(lm, "BATCH", 4)
+    monkeypatch.setattr(lm, "OUT", tmp_path)
+    monkeypatch.setattr(lm, "ADAPTER_CHOICES", ("def-s0", "hard-s0"))
+    monkeypatch.setattr(lm, "hosts_for", lambda arm, split: hosts_for(arm, split)[:2])
     with pytest.raises(SystemExit, match=r"def-s0: sanity gate\(s\) \['none'\] failed"):
-        lm.run(args)
-    smoke = tmp_path / "smoke"
-    recs = lm.read_records(lm.transcript_path(smoke, "def-s0"))
+        lm.run()
+    recs = lm.read_records(lm.transcript_path(tmp_path, "def-s0"))
     assert {r["cond"] for r in recs.values()} == {"ref-def", "ref-base", "none", "all"}
-    assert not lm.transcript_path(smoke, "hard-s0").exists()
-    p = json.loads((smoke / "summary.json").read_text(encoding="utf-8"))["adapters"]["def-s0"]
+    assert not lm.transcript_path(tmp_path, "hard-s0").exists()
+    p = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))["adapters"]["def-s0"]
     assert p["status"] == "invalid" and p["gates"]["all"]["status"] == "pass" and "RF" not in p

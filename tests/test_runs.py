@@ -40,28 +40,31 @@ def test_run_paths_end_to_end(qwen_tok, tiny_peft, tmp_path, monkeypatch) -> Non
     monkeypatch.setattr(ld, "OUT", tmp_path / "docs.json")
     monkeypatch.setattr(jd, "MNT", 4)
     ns, arms = argparse.Namespace, ["undef", "def-s0"]
-    su.run_exp(ns(exp="ml3", langs=["en"], arms=arms, seeds=[0], renderer="v2", batch=8, mnt=4,
-                  limit_hosts=2, out_dir=str(tmp_path / "su")))
-    ta.run(ns(arms=arms, mnt=4, limit=2, spot_unbatched=2, out_dir=str(tmp_path / "ta")))
+    hosts_for, load_items = su.hosts_for, ta.load_items
+    monkeypatch.setattr(su, "hosts_for", lambda *a: hosts_for(*a)[:2])
+    monkeypatch.setattr(su, "MNT", 4)
+    su.run_exp(ns(exp="ml3", langs=["en"], arms=arms, seeds=[0], renderer="v2", batch=8,
+                  out_dir=str(tmp_path / "su")))
+    monkeypatch.setattr(ta, "load_items", lambda ds: (load_items(ds)[0][:2], ""))
+    monkeypatch.setattr(ta, "ARMS", tuple(arms))
+    monkeypatch.setattr(ta, "MNT", 4)
+    monkeypatch.setattr(ta, "OUT", tmp_path / "ta")
+    ta.run(ns(spot_unbatched=2))
     jd.run(ns(arms=arms, seeds=[0], dup_frac=0.1, n_sanity=2, limit_hosts=2,
               out_dir=str(tmp_path / "jd")))
     for exp in ("directives", "docs"):
         lg.run(ns(exp=exp, arms=arms, seeds=[0], batch=8, mnt=4, unbatched=2, n_boot=10,
-                  limit=2, audit=2, out_dir=str(tmp_path / "lg")))
-    cs.run(ns(arms=arms, seeds=[0], families=list(cs.FAMILIES), batch=8, hidden_layers=[1, 2],
-              hidden_arms=["def-s0@0"], limit_hosts=2, out_dir=str(tmp_path / "cs")))
-    smoke = {"su": "su/smoke/ml3", "ta": "ta/smoke", "jd": "jd/smoke",
-             "lg1": "lg/directives/smoke", "lg2": "lg/docs/smoke", "cs": "cs/smoke"}
-    for d in smoke.values():
+                  limit=2, out_dir=str(tmp_path / "lg")))
+    cs.run(ns(arms=arms, seeds=[0], families=list(cs.FAMILIES), batch=8, limit_hosts=2,
+              out_dir=str(tmp_path / "cs")))
+    for d in ("su/ml3", "jd/smoke", "lg/directives/smoke", "lg/docs/smoke", "cs/smoke"):
         assert (tmp_path / d / "design.json").exists()
-    assert (tmp_path / "su/smoke/ml3/summary.json").exists()
-    recs = su.read_records(su.transcript_path(tmp_path / "su/smoke", su.parse_arm("def-s0"), 0,
+    assert (tmp_path / "su/ml3/summary.json").exists()
+    recs = su.read_records(su.transcript_path(tmp_path / "su", su.parse_arm("def-s0"), 0,
                                               "ml3", "v2"))
     n_tmpl = len(su.suite_templates())
     assert len(recs) == n_tmpl * 2 and all(r["batch"] == 8 and r["mnt"] == 4 for r in recs.values())
-    assert json.loads((tmp_path / "ta/smoke/summary.json").read_text())["spot_unbatched"]
+    assert json.loads((tmp_path / "ta/summary.json").read_text())["spot_unbatched"]
     assert (tmp_path / "jd/smoke/judge_items.jsonl").exists()
     for d in ("lg/directives/smoke", "lg/docs/smoke", "cs/smoke"):
         assert (tmp_path / d / "summary.json").exists()
-    assert (tmp_path / "cs/smoke/hidden/def-s0__s0.npz").exists()
-    assert not (tmp_path / "cs/smoke/hidden/undef__s0.npz").exists()
