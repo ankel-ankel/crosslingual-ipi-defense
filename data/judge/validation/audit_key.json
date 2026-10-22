@@ -1,0 +1,705 @@
+{
+ "seed": "e3-audit-2026-10-18",
+ "items": {
+  "Q001": {
+   "item_id": "ab3738c717ad",
+   "stratum": "attacked|undef|2",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 2
+  },
+  "Q002": {
+   "item_id": "9db5ee351d19",
+   "stratum": "benign|def-s2",
+   "pair_type": "benign",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q003": {
+   "item_id": "70876f2deb9e",
+   "stratum": "benign|def-s1",
+   "pair_type": "benign",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q004": {
+   "item_id": "116a14bda394",
+   "stratum": "attacked|undef|2",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 2
+  },
+  "Q005": {
+   "item_id": "7d899ee1c5c8",
+   "stratum": "benign|def-s2",
+   "pair_type": "benign",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q006": {
+   "item_id": "89a2fcf74704",
+   "stratum": "attacked|undef|2",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 2
+  },
+  "Q007": {
+   "item_id": "96f6b065057d",
+   "stratum": "attacked|undef|1",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 1
+  },
+  "Q008": {
+   "item_id": "bead54637b30",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q009": {
+   "item_id": "0621ec28133a",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q010": {
+   "item_id": "3765b537b268",
+   "stratum": "attacked|undef|0",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 0
+  },
+  "Q011": {
+   "item_id": "b2c58fdd0199",
+   "stratum": "attacked|undef|2",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 2
+  },
+  "Q012": {
+   "item_id": "a5802e86bddf",
+   "stratum": "attacked|undef|1",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 1
+  },
+  "Q013": {
+   "item_id": "7bdb31da5964",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q014": {
+   "item_id": "88a3291cdc74",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q015": {
+   "item_id": "b1a17ce097b2",
+   "stratum": "benign|def-s0",
+   "pair_type": "benign",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q016": {
+   "item_id": "936ed8b1b53c",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q017": {
+   "item_id": "0af6fcd75061",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q018": {
+   "item_id": "f6b1908c30e2",
+   "stratum": "benign|def-s1",
+   "pair_type": "benign",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q019": {
+   "item_id": "010e8f1eb9e0",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q020": {
+   "item_id": "62530d0b16e5",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q021": {
+   "item_id": "6908ae1eb454",
+   "stratum": "attacked|undef|0",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 0
+  },
+  "Q022": {
+   "item_id": "35dc57db9754",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q023": {
+   "item_id": "15892a83acee",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q024": {
+   "item_id": "65fb57a8d7dc",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q025": {
+   "item_id": "e62335f108a0",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q026": {
+   "item_id": "749118a4231b",
+   "stratum": "benign|def-s1",
+   "pair_type": "benign",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q027": {
+   "item_id": "e480644d6496",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q028": {
+   "item_id": "f9b23c15cb39",
+   "stratum": "benign|def-s0",
+   "pair_type": "benign",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q029": {
+   "item_id": "c265329cf52a",
+   "stratum": "benign|def-s0",
+   "pair_type": "benign",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q030": {
+   "item_id": "043327a8cae7",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q031": {
+   "item_id": "3012955fbf82",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q032": {
+   "item_id": "bdd74737d52c",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q033": {
+   "item_id": "f1f835299051",
+   "stratum": "benign|def-s2",
+   "pair_type": "benign",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q034": {
+   "item_id": "6c966a1549db",
+   "stratum": "attacked|undef|0",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 0
+  },
+  "Q035": {
+   "item_id": "8071e6d9d313",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q036": {
+   "item_id": "7a2e3232f966",
+   "stratum": "benign|def-s1",
+   "pair_type": "benign",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q037": {
+   "item_id": "a4de21fdea1a",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q038": {
+   "item_id": "21adf7ffd41d",
+   "stratum": "attacked|undef|1",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 1
+  },
+  "Q039": {
+   "item_id": "47a9eafbe28d",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q040": {
+   "item_id": "bb253459d24b",
+   "stratum": "attacked|undef|0",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 0
+  },
+  "Q041": {
+   "item_id": "0200957428f7",
+   "stratum": "benign|def-s1",
+   "pair_type": "benign",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q042": {
+   "item_id": "ba9fd9a07436",
+   "stratum": "attacked|undef|2",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 2
+  },
+  "Q043": {
+   "item_id": "a60339b73fea",
+   "stratum": "attacked|undef|2",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 2
+  },
+  "Q044": {
+   "item_id": "1e37971d640a",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q045": {
+   "item_id": "067b9237e001",
+   "stratum": "attacked|undef|0",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 0
+  },
+  "Q046": {
+   "item_id": "1a1395768ced",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q047": {
+   "item_id": "10582430fe52",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q048": {
+   "item_id": "8778a5c69b2b",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q049": {
+   "item_id": "db08b87153e4",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q050": {
+   "item_id": "b4b0ec260659",
+   "stratum": "benign|def-s2",
+   "pair_type": "benign",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q051": {
+   "item_id": "58111c35d3ae",
+   "stratum": "benign|def-s1",
+   "pair_type": "benign",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q052": {
+   "item_id": "9e1a3eece23c",
+   "stratum": "benign|def-s0",
+   "pair_type": "benign",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q053": {
+   "item_id": "553aba81904b",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q054": {
+   "item_id": "dcc55527c1c1",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q055": {
+   "item_id": "5295c0c11fab",
+   "stratum": "attacked|undef|1",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 1
+  },
+  "Q056": {
+   "item_id": "6c073ab426a5",
+   "stratum": "attacked|undef|0",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 0
+  },
+  "Q057": {
+   "item_id": "c940c3b9f685",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q058": {
+   "item_id": "44b2bcc7c54f",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q059": {
+   "item_id": "c6cac92c89ba",
+   "stratum": "benign|def-s0",
+   "pair_type": "benign",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q060": {
+   "item_id": "dec4fc36c745",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q061": {
+   "item_id": "2f02672e2133",
+   "stratum": "benign|def-s2",
+   "pair_type": "benign",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q062": {
+   "item_id": "6dee5be9b7b8",
+   "stratum": "attacked|undef|1",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 1
+  },
+  "Q063": {
+   "item_id": "f2a427a7a5ea",
+   "stratum": "attacked|undef|0",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 0
+  },
+  "Q064": {
+   "item_id": "c04925656794",
+   "stratum": "attacked|undef|1",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 1
+  },
+  "Q065": {
+   "item_id": "82ab0652da3f",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q066": {
+   "item_id": "004023f330d3",
+   "stratum": "benign|def-s0",
+   "pair_type": "benign",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q067": {
+   "item_id": "efac33f30890",
+   "stratum": "benign|def-s0",
+   "pair_type": "benign",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q068": {
+   "item_id": "01834fa7379b",
+   "stratum": "attacked|undef|2",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 2
+  },
+  "Q069": {
+   "item_id": "bdcc362154ad",
+   "stratum": "benign|def-s2",
+   "pair_type": "benign",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q070": {
+   "item_id": "b965c341a88a",
+   "stratum": "attacked|undef|0",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 0
+  },
+  "Q071": {
+   "item_id": "c22dda4c6fbf",
+   "stratum": "attacked|undef|1",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 1
+  },
+  "Q072": {
+   "item_id": "c29331218b63",
+   "stratum": "benign|def-s1",
+   "pair_type": "benign",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q073": {
+   "item_id": "6bb435d1efdb",
+   "stratum": "attacked|undef|2",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 2
+  },
+  "Q074": {
+   "item_id": "06b265ac75a8",
+   "stratum": "benign|def-s2",
+   "pair_type": "benign",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q075": {
+   "item_id": "98a726a40ffe",
+   "stratum": "attacked|undef|0",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 0
+  },
+  "Q076": {
+   "item_id": "cbc60be7e26c",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q077": {
+   "item_id": "bcf1968a3bdf",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q078": {
+   "item_id": "7d38af698aa8",
+   "stratum": "benign|def-s1",
+   "pair_type": "benign",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q079": {
+   "item_id": "6ceb0675e924",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q080": {
+   "item_id": "3e93242eb8ba",
+   "stratum": "benign|def-s0",
+   "pair_type": "benign",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q081": {
+   "item_id": "de6ceb2730f5",
+   "stratum": "benign|def-s2",
+   "pair_type": "benign",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q082": {
+   "item_id": "4610790122ee",
+   "stratum": "benign|def-s2",
+   "pair_type": "benign",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q083": {
+   "item_id": "29727ad3c5f2",
+   "stratum": "attacked|undef|1",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 1
+  },
+  "Q084": {
+   "item_id": "1e011d21b5b4",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q085": {
+   "item_id": "f607969b32da",
+   "stratum": "attacked|undef|2",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 2
+  },
+  "Q086": {
+   "item_id": "811e6fee91dc",
+   "stratum": "benign|def-s1",
+   "pair_type": "benign",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q087": {
+   "item_id": "6b4abc2580d4",
+   "stratum": "benign|def-s0",
+   "pair_type": "benign",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q088": {
+   "item_id": "63943a2b7828",
+   "stratum": "attacked|undef|1",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 1
+  },
+  "Q089": {
+   "item_id": "6e195852ca71",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q090": {
+   "item_id": "f83da732d0ac",
+   "stratum": "attacked|undef|2",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 2
+  },
+  "Q091": {
+   "item_id": "52d54cbc2879",
+   "stratum": "benign|def-s0",
+   "pair_type": "benign",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q092": {
+   "item_id": "36aae7d946d2",
+   "stratum": "attacked|undef|1",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 1
+  },
+  "Q093": {
+   "item_id": "1cdfd3abe5b0",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  },
+  "Q094": {
+   "item_id": "e48756dff0d5",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q095": {
+   "item_id": "172ea6989bd0",
+   "stratum": "attacked|def-s1",
+   "pair_type": "attacked",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q096": {
+   "item_id": "eacb72363151",
+   "stratum": "benign|def-s1",
+   "pair_type": "benign",
+   "arm": "def-s1",
+   "seed": 1
+  },
+  "Q097": {
+   "item_id": "7c532fb906f1",
+   "stratum": "attacked|def-s2",
+   "pair_type": "attacked",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q098": {
+   "item_id": "aa360358f817",
+   "stratum": "attacked|undef|0",
+   "pair_type": "attacked",
+   "arm": "undef",
+   "seed": 0
+  },
+  "Q099": {
+   "item_id": "439353c8e148",
+   "stratum": "benign|def-s2",
+   "pair_type": "benign",
+   "arm": "def-s2",
+   "seed": 2
+  },
+  "Q100": {
+   "item_id": "608b27d284e2",
+   "stratum": "attacked|def-s0",
+   "pair_type": "attacked",
+   "arm": "def-s0",
+   "seed": 0
+  }
+ }
+}

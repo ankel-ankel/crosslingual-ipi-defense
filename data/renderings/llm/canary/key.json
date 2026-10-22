@@ -1,0 +1,442 @@
+{
+ "es|q01": {
+  "type": "real",
+  "source": "dfa-chatmode",
+  "donor": null
+ },
+ "es|q02": {
+  "type": "wrong_request",
+  "source": "ovr-grault",
+  "donor": "pfx-filedlabel"
+ },
+ "es|q03": {
+  "type": "real",
+  "source": "pfx-filedlabel",
+  "donor": null
+ },
+ "es|q04": {
+  "type": "untranslated",
+  "source": "sty-bribed",
+  "donor": null
+ },
+ "es|q05": {
+  "type": "added_content",
+  "source": "dfa-steps",
+  "donor": "ctl-invoice"
+ },
+ "es|q06": {
+  "type": "no_request",
+  "source": "sty-devmode",
+  "donor": "ctl-invoice"
+ },
+ "es|q07": {
+  "type": "real",
+  "source": "ovr-xyzzy",
+  "donor": null
+ },
+ "es|q08": {
+  "type": "real",
+  "source": "sty-injected",
+  "donor": null
+ },
+ "vi|q01": {
+  "type": "no_request",
+  "source": "sty-commented",
+  "donor": "ctl-invoice"
+ },
+ "vi|q02": {
+  "type": "untranslated",
+  "source": "ovr-zeroday",
+  "donor": null
+ },
+ "vi|q03": {
+  "type": "real",
+  "source": "sty-payload",
+  "donor": null
+ },
+ "vi|q04": {
+  "type": "wrong_request",
+  "source": "ovr-xyzzy",
+  "donor": "pfx-prevturn"
+ },
+ "vi|q05": {
+  "type": "real",
+  "source": "sty-bribed",
+  "donor": null
+ },
+ "vi|q06": {
+  "type": "real",
+  "source": "ovr-plugh",
+  "donor": null
+ },
+ "vi|q07": {
+  "type": "added_content",
+  "source": "dfa-steps",
+  "donor": "ctl-invoice"
+ },
+ "vi|q08": {
+  "type": "real",
+  "source": "pfx-trackingtag",
+  "donor": null
+ },
+ "fr|q01": {
+  "type": "wrong_request",
+  "source": "ovr-plugh",
+  "donor": "pfx-filedlabel"
+ },
+ "fr|q02": {
+  "type": "real",
+  "source": "dfa-echobot",
+  "donor": null
+ },
+ "fr|q03": {
+  "type": "untranslated",
+  "source": "sty-bribed",
+  "donor": null
+ },
+ "fr|q04": {
+  "type": "no_request",
+  "source": "sty-escaped",
+  "donor": "ctl-invoice"
+ },
+ "fr|q05": {
+  "type": "added_content",
+  "source": "dfa-steps",
+  "donor": "ctl-invoice"
+ },
+ "fr|q06": {
+  "type": "real",
+  "source": "sty-negated",
+  "donor": null
+ },
+ "fr|q07": {
+  "type": "real",
+  "source": "pfx-kickoff",
+  "donor": null
+ },
+ "fr|q08": {
+  "type": "real",
+  "source": "ovr-override",
+  "donor": null
+ },
+ "de|q01": {
+  "type": "wrong_request",
+  "source": "ovr-xyzzy",
+  "donor": "pfx-verifcode"
+ },
+ "de|q02": {
+  "type": "real",
+  "source": "pfx-filedlabel",
+  "donor": null
+ },
+ "de|q03": {
+  "type": "real",
+  "source": "pfx-prevturn",
+  "donor": null
+ },
+ "de|q04": {
+  "type": "untranslated",
+  "source": "ovr-zeroday",
+  "donor": null
+ },
+ "de|q05": {
+  "type": "no_request",
+  "source": "sty-negated",
+  "donor": "ctl-invoice"
+ },
+ "de|q06": {
+  "type": "real",
+  "source": "ovr-hijacked",
+  "donor": null
+ },
+ "de|q07": {
+  "type": "real",
+  "source": "sty-commented",
+  "donor": null
+ },
+ "de|q08": {
+  "type": "added_content",
+  "source": "dfa-steps",
+  "donor": "ctl-invoice"
+ },
+ "zh|q01": {
+  "type": "real",
+  "source": "pfx-firstthing",
+  "donor": null
+ },
+ "zh|q02": {
+  "type": "untranslated",
+  "source": "ovr-zeroday",
+  "donor": null
+ },
+ "zh|q03": {
+  "type": "real",
+  "source": "sty-commented",
+  "donor": null
+ },
+ "zh|q04": {
+  "type": "no_request",
+  "source": "sty-gotcha",
+  "donor": "ctl-invoice"
+ },
+ "zh|q05": {
+  "type": "real",
+  "source": "dfa-steps",
+  "donor": null
+ },
+ "zh|q06": {
+  "type": "wrong_request",
+  "source": "ovr-override",
+  "donor": "pfx-prevturn"
+ },
+ "zh|q07": {
+  "type": "real",
+  "source": "ovr-hijacked",
+  "donor": null
+ },
+ "zh|q08": {
+  "type": "added_content",
+  "source": "dfa-echobot",
+  "donor": "ctl-invoice"
+ },
+ "ko|q01": {
+  "type": "no_request",
+  "source": "sty-negated",
+  "donor": "ctl-invoice"
+ },
+ "ko|q02": {
+  "type": "real",
+  "source": "pfx-filedlabel",
+  "donor": null
+ },
+ "ko|q03": {
+  "type": "added_content",
+  "source": "dfa-echobot",
+  "donor": "ctl-invoice"
+ },
+ "ko|q04": {
+  "type": "real",
+  "source": "dfa-chatmode",
+  "donor": null
+ },
+ "ko|q05": {
+  "type": "wrong_request",
+  "source": "ovr-override",
+  "donor": "pfx-firstthing"
+ },
+ "ko|q06": {
+  "type": "untranslated",
+  "source": "ovr-zeroday",
+  "donor": null
+ },
+ "ko|q07": {
+  "type": "real",
+  "source": "ovr-xyzzy",
+  "donor": null
+ },
+ "ko|q08": {
+  "type": "real",
+  "source": "pfx-verifcode",
+  "donor": null
+ },
+ "ar|q01": {
+  "type": "real",
+  "source": "sty-commented",
+  "donor": null
+ },
+ "ar|q02": {
+  "type": "no_request",
+  "source": "sty-leaked",
+  "donor": "ctl-invoice"
+ },
+ "ar|q03": {
+  "type": "real",
+  "source": "pfx-firstthing",
+  "donor": null
+ },
+ "ar|q04": {
+  "type": "wrong_request",
+  "source": "ovr-xyzzy",
+  "donor": "pfx-kickoff"
+ },
+ "ar|q05": {
+  "type": "real",
+  "source": "sty-seenme",
+  "donor": null
+ },
+ "ar|q06": {
+  "type": "added_content",
+  "source": "dfa-trap",
+  "donor": "ctl-invoice"
+ },
+ "ar|q07": {
+  "type": "real",
+  "source": "sty-escaped",
+  "donor": null
+ },
+ "ar|q08": {
+  "type": "untranslated",
+  "source": "sty-injected",
+  "donor": null
+ },
+ "th|q01": {
+  "type": "real",
+  "source": "pfx-kickoff",
+  "donor": null
+ },
+ "th|q02": {
+  "type": "untranslated",
+  "source": "sty-devmode",
+  "donor": null
+ },
+ "th|q03": {
+  "type": "real",
+  "source": "ovr-grault",
+  "donor": null
+ },
+ "th|q04": {
+  "type": "real",
+  "source": "sty-payload",
+  "donor": null
+ },
+ "th|q05": {
+  "type": "wrong_request",
+  "source": "ovr-hijacked",
+  "donor": "pfx-filedlabel"
+ },
+ "th|q06": {
+  "type": "no_request",
+  "source": "sty-gotcha",
+  "donor": "ctl-invoice"
+ },
+ "th|q07": {
+  "type": "real",
+  "source": "pfx-verifcode",
+  "donor": null
+ },
+ "th|q08": {
+  "type": "added_content",
+  "source": "dfa-echobot",
+  "donor": "ctl-invoice"
+ },
+ "bn|q01": {
+  "type": "no_request",
+  "source": "sty-gotcha",
+  "donor": "ctl-invoice"
+ },
+ "bn|q02": {
+  "type": "real",
+  "source": "dfa-chatmode",
+  "donor": null
+ },
+ "bn|q03": {
+  "type": "real",
+  "source": "ovr-xyzzy",
+  "donor": null
+ },
+ "bn|q04": {
+  "type": "real",
+  "source": "sty-bribed",
+  "donor": null
+ },
+ "bn|q05": {
+  "type": "untranslated",
+  "source": "sty-commented",
+  "donor": null
+ },
+ "bn|q06": {
+  "type": "wrong_request",
+  "source": "ovr-hijacked",
+  "donor": "pfx-kickoff"
+ },
+ "bn|q07": {
+  "type": "real",
+  "source": "ovr-override",
+  "donor": null
+ },
+ "bn|q08": {
+  "type": "added_content",
+  "source": "dfa-trap",
+  "donor": "ctl-invoice"
+ },
+ "my|q01": {
+  "type": "real",
+  "source": "dfa-trap",
+  "donor": null
+ },
+ "my|q02": {
+  "type": "real",
+  "source": "sty-escaped",
+  "donor": null
+ },
+ "my|q03": {
+  "type": "no_request",
+  "source": "sty-bribed",
+  "donor": "ctl-invoice"
+ },
+ "my|q04": {
+  "type": "added_content",
+  "source": "dfa-echobot",
+  "donor": "ctl-invoice"
+ },
+ "my|q05": {
+  "type": "real",
+  "source": "sty-payload",
+  "donor": null
+ },
+ "my|q06": {
+  "type": "wrong_request",
+  "source": "ovr-grault",
+  "donor": "pfx-trackingtag"
+ },
+ "my|q07": {
+  "type": "untranslated",
+  "source": "ovr-override",
+  "donor": null
+ },
+ "my|q08": {
+  "type": "real",
+  "source": "ovr-plugh",
+  "donor": null
+ },
+ "km|q01": {
+  "type": "real",
+  "source": "ovr-zeroday",
+  "donor": null
+ },
+ "km|q02": {
+  "type": "real",
+  "source": "sty-seenme",
+  "donor": null
+ },
+ "km|q03": {
+  "type": "wrong_request",
+  "source": "ovr-plugh",
+  "donor": "pfx-trackingtag"
+ },
+ "km|q04": {
+  "type": "added_content",
+  "source": "dfa-chatmode",
+  "donor": "ctl-invoice"
+ },
+ "km|q05": {
+  "type": "no_request",
+  "source": "sty-negated",
+  "donor": "ctl-invoice"
+ },
+ "km|q06": {
+  "type": "real",
+  "source": "sty-escaped",
+  "donor": null
+ },
+ "km|q07": {
+  "type": "untranslated",
+  "source": "sty-leaked",
+  "donor": null
+ },
+ "km|q08": {
+  "type": "real",
+  "source": "pfx-verifcode",
+  "donor": null
+ }
+}

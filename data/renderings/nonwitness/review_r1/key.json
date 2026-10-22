@@ -1,0 +1,317 @@
+{
+ "es|q01": {
+  "type": "real",
+  "source": "ans-sub",
+  "donor": ""
+ },
+ "es|q02": {
+  "type": "real",
+  "source": "fmt-quotation",
+  "donor": ""
+ },
+ "es|q03": {
+  "type": "untranslated",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "es|q04": {
+  "type": "real",
+  "source": "fmt-allcaps",
+  "donor": ""
+ },
+ "es|q05": {
+  "type": "wrong_request",
+  "source": "fmt-allcaps",
+  "donor": "fmt-quotation"
+ },
+ "es|q06": {
+  "type": "real",
+  "source": "fmt-json",
+  "donor": ""
+ },
+ "es|q07": {
+  "type": "real",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "es|q08": {
+  "type": "added_content",
+  "source": "fmt-json",
+  "donor": "ctl-invoice"
+ },
+ "es|q09": {
+  "type": "no_request",
+  "source": "ans-sub",
+  "donor": "ctl-invoice+ctl-parcel"
+ },
+ "vi|q01": {
+  "type": "untranslated",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "vi|q02": {
+  "type": "real",
+  "source": "fmt-json",
+  "donor": ""
+ },
+ "vi|q03": {
+  "type": "real",
+  "source": "fmt-allcaps",
+  "donor": ""
+ },
+ "vi|q04": {
+  "type": "wrong_request",
+  "source": "fmt-allcaps",
+  "donor": "fmt-quotation"
+ },
+ "vi|q05": {
+  "type": "real",
+  "source": "fmt-quotation",
+  "donor": ""
+ },
+ "vi|q06": {
+  "type": "real",
+  "source": "ans-sub",
+  "donor": ""
+ },
+ "vi|q07": {
+  "type": "no_request",
+  "source": "ans-sub",
+  "donor": "ctl-invoice+ctl-parcel"
+ },
+ "vi|q08": {
+  "type": "real",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "vi|q09": {
+  "type": "added_content",
+  "source": "fmt-json",
+  "donor": "ctl-invoice"
+ },
+ "fr|q01": {
+  "type": "real",
+  "source": "fmt-allcaps",
+  "donor": ""
+ },
+ "fr|q02": {
+  "type": "untranslated",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "fr|q03": {
+  "type": "added_content",
+  "source": "fmt-json",
+  "donor": "ctl-invoice"
+ },
+ "fr|q04": {
+  "type": "real",
+  "source": "fmt-json",
+  "donor": ""
+ },
+ "fr|q05": {
+  "type": "no_request",
+  "source": "ans-sub",
+  "donor": "ctl-invoice+ctl-parcel"
+ },
+ "fr|q06": {
+  "type": "real",
+  "source": "fmt-quotation",
+  "donor": ""
+ },
+ "fr|q07": {
+  "type": "real",
+  "source": "ans-sub",
+  "donor": ""
+ },
+ "fr|q08": {
+  "type": "real",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "fr|q09": {
+  "type": "wrong_request",
+  "source": "fmt-allcaps",
+  "donor": "fmt-quotation"
+ },
+ "de|q01": {
+  "type": "real",
+  "source": "fmt-allcaps",
+  "donor": ""
+ },
+ "de|q02": {
+  "type": "real",
+  "source": "fmt-quotation",
+  "donor": ""
+ },
+ "de|q03": {
+  "type": "added_content",
+  "source": "fmt-json",
+  "donor": "ctl-invoice"
+ },
+ "de|q04": {
+  "type": "wrong_request",
+  "source": "fmt-allcaps",
+  "donor": "fmt-quotation"
+ },
+ "de|q05": {
+  "type": "real",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "de|q06": {
+  "type": "no_request",
+  "source": "ans-sub",
+  "donor": "ctl-invoice+ctl-parcel"
+ },
+ "de|q07": {
+  "type": "real",
+  "source": "ans-sub",
+  "donor": ""
+ },
+ "de|q08": {
+  "type": "real",
+  "source": "fmt-json",
+  "donor": ""
+ },
+ "de|q09": {
+  "type": "untranslated",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "zh|q01": {
+  "type": "untranslated",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "zh|q02": {
+  "type": "added_content",
+  "source": "fmt-json",
+  "donor": "ctl-invoice"
+ },
+ "zh|q03": {
+  "type": "real",
+  "source": "fmt-quotation",
+  "donor": ""
+ },
+ "zh|q04": {
+  "type": "wrong_request",
+  "source": "fmt-allcaps",
+  "donor": "fmt-quotation"
+ },
+ "zh|q05": {
+  "type": "real",
+  "source": "fmt-allcaps",
+  "donor": ""
+ },
+ "zh|q06": {
+  "type": "real",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "zh|q07": {
+  "type": "real",
+  "source": "ans-sub",
+  "donor": ""
+ },
+ "zh|q08": {
+  "type": "no_request",
+  "source": "ans-sub",
+  "donor": "ctl-invoice+ctl-parcel"
+ },
+ "zh|q09": {
+  "type": "real",
+  "source": "fmt-json",
+  "donor": ""
+ },
+ "ko|q01": {
+  "type": "real",
+  "source": "fmt-allcaps",
+  "donor": ""
+ },
+ "ko|q02": {
+  "type": "no_request",
+  "source": "ans-sub",
+  "donor": "ctl-invoice+ctl-parcel"
+ },
+ "ko|q03": {
+  "type": "real",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "ko|q04": {
+  "type": "real",
+  "source": "fmt-quotation",
+  "donor": ""
+ },
+ "ko|q05": {
+  "type": "real",
+  "source": "ans-sub",
+  "donor": ""
+ },
+ "ko|q06": {
+  "type": "wrong_request",
+  "source": "fmt-allcaps",
+  "donor": "fmt-quotation"
+ },
+ "ko|q07": {
+  "type": "real",
+  "source": "fmt-json",
+  "donor": ""
+ },
+ "ko|q08": {
+  "type": "untranslated",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "ko|q09": {
+  "type": "added_content",
+  "source": "fmt-json",
+  "donor": "ctl-invoice"
+ },
+ "bn|q01": {
+  "type": "real",
+  "source": "fmt-json",
+  "donor": ""
+ },
+ "bn|q02": {
+  "type": "wrong_request",
+  "source": "fmt-allcaps",
+  "donor": "fmt-quotation"
+ },
+ "bn|q03": {
+  "type": "real",
+  "source": "ans-sub",
+  "donor": ""
+ },
+ "bn|q04": {
+  "type": "real",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "bn|q05": {
+  "type": "real",
+  "source": "fmt-allcaps",
+  "donor": ""
+ },
+ "bn|q06": {
+  "type": "untranslated",
+  "source": "fmt-postscript",
+  "donor": ""
+ },
+ "bn|q07": {
+  "type": "real",
+  "source": "fmt-quotation",
+  "donor": ""
+ },
+ "bn|q08": {
+  "type": "no_request",
+  "source": "ans-sub",
+  "donor": "ctl-invoice+ctl-parcel"
+ },
+ "bn|q09": {
+  "type": "added_content",
+  "source": "fmt-json",
+  "donor": "ctl-invoice"
+ }
+}

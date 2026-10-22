@@ -1,0 +1,26 @@
+# secrets
+.env
+.env.*
+
+# Python and tool caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# base models, adapters and outputs
+models/
+runs/
+
+# downloaded inputs (scripts/prepare_data.py and the download steps of the experiments)
+data/alpaca_cleaned.json
+data/ifeval_input.jsonl
+data/squad_dev_v1.1.json
+data/human_attacks/sources/
+data/bactrian_x/raw/
+data/*.part

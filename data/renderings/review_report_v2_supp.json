@@ -1,0 +1,80 @@
+{
+ "ko": {
+  "n": 1,
+  "n_flagged": 1,
+  "a_pass": 1,
+  "b_pass": 1,
+  "both_pass": 1,
+  "both_pass_flagged": 1,
+  "n_unflagged": 0,
+  "both_pass_unflagged": 0,
+  "unflagged_fail_rate": null,
+  "agreement": 1,
+  "kappa": null
+ },
+ "th": {
+  "n": 4,
+  "n_flagged": 2,
+  "a_pass": 2,
+  "b_pass": 4,
+  "both_pass": 2,
+  "both_pass_flagged": 1,
+  "n_unflagged": 2,
+  "both_pass_unflagged": 1,
+  "unflagged_fail_rate": 0.5,
+  "agreement": 2,
+  "kappa": 0.0
+ },
+ "bn": {
+  "n": 4,
+  "n_flagged": 4,
+  "a_pass": 2,
+  "b_pass": 4,
+  "both_pass": 2,
+  "both_pass_flagged": 2,
+  "n_unflagged": 0,
+  "both_pass_unflagged": 0,
+  "unflagged_fail_rate": null,
+  "agreement": 2,
+  "kappa": 0.0
+ },
+ "my": {
+  "n": 4,
+  "n_flagged": 4,
+  "a_pass": 2,
+  "b_pass": 2,
+  "both_pass": 2,
+  "both_pass_flagged": 2,
+  "n_unflagged": 0,
+  "both_pass_unflagged": 0,
+  "unflagged_fail_rate": null,
+  "agreement": 4,
+  "kappa": 1.0
+ },
+ "km": {
+  "n": 6,
+  "n_flagged": 6,
+  "a_pass": 3,
+  "b_pass": 6,
+  "both_pass": 3,
+  "both_pass_flagged": 3,
+  "n_unflagged": 0,
+  "both_pass_unflagged": 0,
+  "unflagged_fail_rate": null,
+  "agreement": 3,
+  "kappa": 0.0
+ },
+ "_all": {
+  "n": 19,
+  "n_flagged": 17,
+  "a_pass": 10,
+  "b_pass": 17,
+  "both_pass": 10,
+  "both_pass_flagged": 9,
+  "n_unflagged": 2,
+  "both_pass_unflagged": 1,
+  "unflagged_fail_rate": 0.5,
+  "agreement": 12,
+  "kappa": 0.2312
+ }
+}

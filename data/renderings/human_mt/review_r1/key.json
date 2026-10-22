@@ -1,0 +1,982 @@
+{
+ "es|q01": {
+  "type": "real",
+  "source": "hen-6dfc35365c39",
+  "donor": ""
+ },
+ "es|q02": {
+  "type": "real",
+  "source": "hen-604467ff7ca7",
+  "donor": ""
+ },
+ "es|q03": {
+  "type": "untranslated",
+  "source": "hen-05a978a64fd9",
+  "donor": ""
+ },
+ "es|q04": {
+  "type": "real",
+  "source": "hen-cbea2b4d0f7d",
+  "donor": ""
+ },
+ "es|q05": {
+  "type": "real",
+  "source": "hen-99749b7b76c3",
+  "donor": ""
+ },
+ "es|q06": {
+  "type": "real",
+  "source": "hen-9e2a97a41940",
+  "donor": ""
+ },
+ "es|q07": {
+  "type": "real",
+  "source": "hen-de8b2af32641",
+  "donor": ""
+ },
+ "es|q08": {
+  "type": "real",
+  "source": "hen-0e996bb5b53c",
+  "donor": ""
+ },
+ "es|q09": {
+  "type": "real",
+  "source": "hen-61e9844dcdf5",
+  "donor": ""
+ },
+ "es|q10": {
+  "type": "real",
+  "source": "hen-284d62e24070",
+  "donor": ""
+ },
+ "es|q11": {
+  "type": "added_content",
+  "source": "hen-5cb04754246d",
+  "donor": "ctl-parcel"
+ },
+ "es|q12": {
+  "type": "wrong_request",
+  "source": "hen-284d62e24070",
+  "donor": "hen-e8424fe92d00"
+ },
+ "es|q13": {
+  "type": "real",
+  "source": "hen-8d5f3ff8c225",
+  "donor": ""
+ },
+ "es|q14": {
+  "type": "real",
+  "source": "hen-39c50e1dcdf9",
+  "donor": ""
+ },
+ "es|q15": {
+  "type": "real",
+  "source": "hen-e8424fe92d00",
+  "donor": ""
+ },
+ "es|q16": {
+  "type": "real",
+  "source": "hen-baa57ea80508",
+  "donor": ""
+ },
+ "es|q17": {
+  "type": "real",
+  "source": "hen-e4dc46eae6ac",
+  "donor": ""
+ },
+ "es|q18": {
+  "type": "real",
+  "source": "hen-873cb6198eb3",
+  "donor": ""
+ },
+ "es|q19": {
+  "type": "real",
+  "source": "hen-05a978a64fd9",
+  "donor": ""
+ },
+ "es|q20": {
+  "type": "real",
+  "source": "hen-9cc5b1354799",
+  "donor": ""
+ },
+ "es|q21": {
+  "type": "real",
+  "source": "hen-db70f76163fa",
+  "donor": ""
+ },
+ "es|q22": {
+  "type": "real",
+  "source": "hen-28e6be5815f6",
+  "donor": ""
+ },
+ "es|q23": {
+  "type": "real",
+  "source": "hen-26e02e82dd4f",
+  "donor": ""
+ },
+ "es|q24": {
+  "type": "real",
+  "source": "hen-5cb04754246d",
+  "donor": ""
+ },
+ "es|q25": {
+  "type": "real",
+  "source": "hen-bfcc10b92525",
+  "donor": ""
+ },
+ "es|q26": {
+  "type": "real",
+  "source": "hen-41430f3f92c5",
+  "donor": ""
+ },
+ "es|q27": {
+  "type": "real",
+  "source": "hen-b495d39e03e6",
+  "donor": ""
+ },
+ "es|q28": {
+  "type": "no_request",
+  "source": "hen-6dfc35365c39",
+  "donor": "ctl-invoice"
+ },
+ "vi|q01": {
+  "type": "real",
+  "source": "hen-9cc5b1354799",
+  "donor": ""
+ },
+ "vi|q02": {
+  "type": "real",
+  "source": "hen-bfcc10b92525",
+  "donor": ""
+ },
+ "vi|q03": {
+  "type": "real",
+  "source": "hen-26e02e82dd4f",
+  "donor": ""
+ },
+ "vi|q04": {
+  "type": "real",
+  "source": "hen-baa57ea80508",
+  "donor": ""
+ },
+ "vi|q05": {
+  "type": "added_content",
+  "source": "hen-de8b2af32641",
+  "donor": "ctl-parcel"
+ },
+ "vi|q06": {
+  "type": "real",
+  "source": "hen-39c50e1dcdf9",
+  "donor": ""
+ },
+ "vi|q07": {
+  "type": "real",
+  "source": "hen-61e9844dcdf5",
+  "donor": ""
+ },
+ "vi|q08": {
+  "type": "real",
+  "source": "hen-6dfc35365c39",
+  "donor": ""
+ },
+ "vi|q09": {
+  "type": "real",
+  "source": "hen-cbea2b4d0f7d",
+  "donor": ""
+ },
+ "vi|q10": {
+  "type": "real",
+  "source": "hen-99749b7b76c3",
+  "donor": ""
+ },
+ "vi|q11": {
+  "type": "real",
+  "source": "hen-e8424fe92d00",
+  "donor": ""
+ },
+ "vi|q12": {
+  "type": "no_request",
+  "source": "hen-26e02e82dd4f",
+  "donor": "ctl-invoice"
+ },
+ "vi|q13": {
+  "type": "real",
+  "source": "hen-e4dc46eae6ac",
+  "donor": ""
+ },
+ "vi|q14": {
+  "type": "real",
+  "source": "hen-604467ff7ca7",
+  "donor": ""
+ },
+ "vi|q15": {
+  "type": "real",
+  "source": "hen-0e996bb5b53c",
+  "donor": ""
+ },
+ "vi|q16": {
+  "type": "real",
+  "source": "hen-28e6be5815f6",
+  "donor": ""
+ },
+ "vi|q17": {
+  "type": "real",
+  "source": "hen-873cb6198eb3",
+  "donor": ""
+ },
+ "vi|q18": {
+  "type": "real",
+  "source": "hen-41430f3f92c5",
+  "donor": ""
+ },
+ "vi|q19": {
+  "type": "real",
+  "source": "hen-de8b2af32641",
+  "donor": ""
+ },
+ "vi|q20": {
+  "type": "real",
+  "source": "hen-b495d39e03e6",
+  "donor": ""
+ },
+ "vi|q21": {
+  "type": "real",
+  "source": "hen-9e2a97a41940",
+  "donor": ""
+ },
+ "vi|q22": {
+  "type": "real",
+  "source": "hen-5cb04754246d",
+  "donor": ""
+ },
+ "vi|q23": {
+  "type": "real",
+  "source": "hen-284d62e24070",
+  "donor": ""
+ },
+ "vi|q24": {
+  "type": "untranslated",
+  "source": "hen-39c50e1dcdf9",
+  "donor": ""
+ },
+ "vi|q25": {
+  "type": "wrong_request",
+  "source": "hen-6dfc35365c39",
+  "donor": "hen-41430f3f92c5"
+ },
+ "vi|q26": {
+  "type": "real",
+  "source": "hen-8d5f3ff8c225",
+  "donor": ""
+ },
+ "vi|q27": {
+  "type": "real",
+  "source": "hen-db70f76163fa",
+  "donor": ""
+ },
+ "vi|q28": {
+  "type": "real",
+  "source": "hen-05a978a64fd9",
+  "donor": ""
+ },
+ "fr|q01": {
+  "type": "real",
+  "source": "hen-de8b2af32641",
+  "donor": ""
+ },
+ "fr|q02": {
+  "type": "real",
+  "source": "hen-9cc5b1354799",
+  "donor": ""
+ },
+ "fr|q03": {
+  "type": "real",
+  "source": "hen-e8424fe92d00",
+  "donor": ""
+ },
+ "fr|q04": {
+  "type": "real",
+  "source": "hen-61e9844dcdf5",
+  "donor": ""
+ },
+ "fr|q05": {
+  "type": "real",
+  "source": "hen-db70f76163fa",
+  "donor": ""
+ },
+ "fr|q06": {
+  "type": "no_request",
+  "source": "hen-05a978a64fd9",
+  "donor": "ctl-invoice"
+ },
+ "fr|q07": {
+  "type": "real",
+  "source": "hen-05a978a64fd9",
+  "donor": ""
+ },
+ "fr|q08": {
+  "type": "real",
+  "source": "hen-284d62e24070",
+  "donor": ""
+ },
+ "fr|q09": {
+  "type": "real",
+  "source": "hen-e4dc46eae6ac",
+  "donor": ""
+ },
+ "fr|q10": {
+  "type": "real",
+  "source": "hen-28e6be5815f6",
+  "donor": ""
+ },
+ "fr|q11": {
+  "type": "real",
+  "source": "hen-b495d39e03e6",
+  "donor": ""
+ },
+ "fr|q12": {
+  "type": "real",
+  "source": "hen-39c50e1dcdf9",
+  "donor": ""
+ },
+ "fr|q13": {
+  "type": "real",
+  "source": "hen-99749b7b76c3",
+  "donor": ""
+ },
+ "fr|q14": {
+  "type": "real",
+  "source": "hen-604467ff7ca7",
+  "donor": ""
+ },
+ "fr|q15": {
+  "type": "real",
+  "source": "hen-baa57ea80508",
+  "donor": ""
+ },
+ "fr|q16": {
+  "type": "real",
+  "source": "hen-8d5f3ff8c225",
+  "donor": ""
+ },
+ "fr|q17": {
+  "type": "real",
+  "source": "hen-26e02e82dd4f",
+  "donor": ""
+ },
+ "fr|q18": {
+  "type": "real",
+  "source": "hen-873cb6198eb3",
+  "donor": ""
+ },
+ "fr|q19": {
+  "type": "real",
+  "source": "hen-6dfc35365c39",
+  "donor": ""
+ },
+ "fr|q20": {
+  "type": "real",
+  "source": "hen-bfcc10b92525",
+  "donor": ""
+ },
+ "fr|q21": {
+  "type": "real",
+  "source": "hen-0e996bb5b53c",
+  "donor": ""
+ },
+ "fr|q22": {
+  "type": "real",
+  "source": "hen-9e2a97a41940",
+  "donor": ""
+ },
+ "fr|q23": {
+  "type": "real",
+  "source": "hen-41430f3f92c5",
+  "donor": ""
+ },
+ "fr|q24": {
+  "type": "real",
+  "source": "hen-5cb04754246d",
+  "donor": ""
+ },
+ "fr|q25": {
+  "type": "added_content",
+  "source": "hen-db70f76163fa",
+  "donor": "ctl-parcel"
+ },
+ "fr|q26": {
+  "type": "real",
+  "source": "hen-cbea2b4d0f7d",
+  "donor": ""
+ },
+ "fr|q27": {
+  "type": "wrong_request",
+  "source": "hen-e8424fe92d00",
+  "donor": "hen-604467ff7ca7"
+ },
+ "fr|q28": {
+  "type": "untranslated",
+  "source": "hen-41430f3f92c5",
+  "donor": ""
+ },
+ "de|q01": {
+  "type": "wrong_request",
+  "source": "hen-604467ff7ca7",
+  "donor": "hen-26e02e82dd4f"
+ },
+ "de|q02": {
+  "type": "real",
+  "source": "hen-6dfc35365c39",
+  "donor": ""
+ },
+ "de|q03": {
+  "type": "real",
+  "source": "hen-9e2a97a41940",
+  "donor": ""
+ },
+ "de|q04": {
+  "type": "real",
+  "source": "hen-05a978a64fd9",
+  "donor": ""
+ },
+ "de|q05": {
+  "type": "real",
+  "source": "hen-e8424fe92d00",
+  "donor": ""
+ },
+ "de|q06": {
+  "type": "real",
+  "source": "hen-0e996bb5b53c",
+  "donor": ""
+ },
+ "de|q07": {
+  "type": "real",
+  "source": "hen-baa57ea80508",
+  "donor": ""
+ },
+ "de|q08": {
+  "type": "no_request",
+  "source": "hen-bfcc10b92525",
+  "donor": "ctl-invoice"
+ },
+ "de|q09": {
+  "type": "added_content",
+  "source": "hen-41430f3f92c5",
+  "donor": "ctl-parcel"
+ },
+ "de|q10": {
+  "type": "real",
+  "source": "hen-8d5f3ff8c225",
+  "donor": ""
+ },
+ "de|q11": {
+  "type": "real",
+  "source": "hen-b495d39e03e6",
+  "donor": ""
+ },
+ "de|q12": {
+  "type": "real",
+  "source": "hen-bfcc10b92525",
+  "donor": ""
+ },
+ "de|q13": {
+  "type": "real",
+  "source": "hen-41430f3f92c5",
+  "donor": ""
+ },
+ "de|q14": {
+  "type": "real",
+  "source": "hen-28e6be5815f6",
+  "donor": ""
+ },
+ "de|q15": {
+  "type": "real",
+  "source": "hen-284d62e24070",
+  "donor": ""
+ },
+ "de|q16": {
+  "type": "real",
+  "source": "hen-39c50e1dcdf9",
+  "donor": ""
+ },
+ "de|q17": {
+  "type": "real",
+  "source": "hen-99749b7b76c3",
+  "donor": ""
+ },
+ "de|q18": {
+  "type": "real",
+  "source": "hen-873cb6198eb3",
+  "donor": ""
+ },
+ "de|q19": {
+  "type": "real",
+  "source": "hen-e4dc46eae6ac",
+  "donor": ""
+ },
+ "de|q20": {
+  "type": "real",
+  "source": "hen-de8b2af32641",
+  "donor": ""
+ },
+ "de|q21": {
+  "type": "real",
+  "source": "hen-db70f76163fa",
+  "donor": ""
+ },
+ "de|q22": {
+  "type": "untranslated",
+  "source": "hen-e8424fe92d00",
+  "donor": ""
+ },
+ "de|q23": {
+  "type": "real",
+  "source": "hen-61e9844dcdf5",
+  "donor": ""
+ },
+ "de|q24": {
+  "type": "real",
+  "source": "hen-9cc5b1354799",
+  "donor": ""
+ },
+ "de|q25": {
+  "type": "real",
+  "source": "hen-5cb04754246d",
+  "donor": ""
+ },
+ "de|q26": {
+  "type": "real",
+  "source": "hen-cbea2b4d0f7d",
+  "donor": ""
+ },
+ "de|q27": {
+  "type": "real",
+  "source": "hen-604467ff7ca7",
+  "donor": ""
+ },
+ "de|q28": {
+  "type": "real",
+  "source": "hen-26e02e82dd4f",
+  "donor": ""
+ },
+ "zh|q01": {
+  "type": "real",
+  "source": "hen-baa57ea80508",
+  "donor": ""
+ },
+ "zh|q02": {
+  "type": "real",
+  "source": "hen-26e02e82dd4f",
+  "donor": ""
+ },
+ "zh|q03": {
+  "type": "real",
+  "source": "hen-6dfc35365c39",
+  "donor": ""
+ },
+ "zh|q04": {
+  "type": "real",
+  "source": "hen-0e996bb5b53c",
+  "donor": ""
+ },
+ "zh|q05": {
+  "type": "real",
+  "source": "hen-99749b7b76c3",
+  "donor": ""
+ },
+ "zh|q06": {
+  "type": "real",
+  "source": "hen-41430f3f92c5",
+  "donor": ""
+ },
+ "zh|q07": {
+  "type": "real",
+  "source": "hen-db70f76163fa",
+  "donor": ""
+ },
+ "zh|q08": {
+  "type": "real",
+  "source": "hen-604467ff7ca7",
+  "donor": ""
+ },
+ "zh|q09": {
+  "type": "real",
+  "source": "hen-e8424fe92d00",
+  "donor": ""
+ },
+ "zh|q10": {
+  "type": "real",
+  "source": "hen-de8b2af32641",
+  "donor": ""
+ },
+ "zh|q11": {
+  "type": "real",
+  "source": "hen-284d62e24070",
+  "donor": ""
+ },
+ "zh|q12": {
+  "type": "wrong_request",
+  "source": "hen-28e6be5815f6",
+  "donor": "hen-604467ff7ca7"
+ },
+ "zh|q13": {
+  "type": "real",
+  "source": "hen-9e2a97a41940",
+  "donor": ""
+ },
+ "zh|q14": {
+  "type": "real",
+  "source": "hen-9cc5b1354799",
+  "donor": ""
+ },
+ "zh|q15": {
+  "type": "no_request",
+  "source": "hen-9cc5b1354799",
+  "donor": "ctl-invoice"
+ },
+ "zh|q16": {
+  "type": "real",
+  "source": "hen-61e9844dcdf5",
+  "donor": ""
+ },
+ "zh|q17": {
+  "type": "real",
+  "source": "hen-5cb04754246d",
+  "donor": ""
+ },
+ "zh|q18": {
+  "type": "real",
+  "source": "hen-8d5f3ff8c225",
+  "donor": ""
+ },
+ "zh|q19": {
+  "type": "real",
+  "source": "hen-05a978a64fd9",
+  "donor": ""
+ },
+ "zh|q20": {
+  "type": "untranslated",
+  "source": "hen-0e996bb5b53c",
+  "donor": ""
+ },
+ "zh|q21": {
+  "type": "real",
+  "source": "hen-cbea2b4d0f7d",
+  "donor": ""
+ },
+ "zh|q22": {
+  "type": "added_content",
+  "source": "hen-bfcc10b92525",
+  "donor": "ctl-parcel"
+ },
+ "zh|q23": {
+  "type": "real",
+  "source": "hen-873cb6198eb3",
+  "donor": ""
+ },
+ "zh|q24": {
+  "type": "real",
+  "source": "hen-28e6be5815f6",
+  "donor": ""
+ },
+ "zh|q25": {
+  "type": "real",
+  "source": "hen-e4dc46eae6ac",
+  "donor": ""
+ },
+ "zh|q26": {
+  "type": "real",
+  "source": "hen-39c50e1dcdf9",
+  "donor": ""
+ },
+ "zh|q27": {
+  "type": "real",
+  "source": "hen-b495d39e03e6",
+  "donor": ""
+ },
+ "zh|q28": {
+  "type": "real",
+  "source": "hen-bfcc10b92525",
+  "donor": ""
+ },
+ "ko|q01": {
+  "type": "real",
+  "source": "hen-28e6be5815f6",
+  "donor": ""
+ },
+ "ko|q02": {
+  "type": "real",
+  "source": "hen-61e9844dcdf5",
+  "donor": ""
+ },
+ "ko|q03": {
+  "type": "real",
+  "source": "hen-8d5f3ff8c225",
+  "donor": ""
+ },
+ "ko|q04": {
+  "type": "real",
+  "source": "hen-0e996bb5b53c",
+  "donor": ""
+ },
+ "ko|q05": {
+  "type": "added_content",
+  "source": "hen-61e9844dcdf5",
+  "donor": "ctl-parcel"
+ },
+ "ko|q06": {
+  "type": "wrong_request",
+  "source": "hen-e8424fe92d00",
+  "donor": "hen-9e2a97a41940"
+ },
+ "ko|q07": {
+  "type": "real",
+  "source": "hen-b495d39e03e6",
+  "donor": ""
+ },
+ "ko|q08": {
+  "type": "real",
+  "source": "hen-baa57ea80508",
+  "donor": ""
+ },
+ "ko|q09": {
+  "type": "real",
+  "source": "hen-bfcc10b92525",
+  "donor": ""
+ },
+ "ko|q10": {
+  "type": "real",
+  "source": "hen-39c50e1dcdf9",
+  "donor": ""
+ },
+ "ko|q11": {
+  "type": "real",
+  "source": "hen-41430f3f92c5",
+  "donor": ""
+ },
+ "ko|q12": {
+  "type": "real",
+  "source": "hen-6dfc35365c39",
+  "donor": ""
+ },
+ "ko|q13": {
+  "type": "untranslated",
+  "source": "hen-28e6be5815f6",
+  "donor": ""
+ },
+ "ko|q14": {
+  "type": "real",
+  "source": "hen-db70f76163fa",
+  "donor": ""
+ },
+ "ko|q15": {
+  "type": "real",
+  "source": "hen-99749b7b76c3",
+  "donor": ""
+ },
+ "ko|q16": {
+  "type": "real",
+  "source": "hen-873cb6198eb3",
+  "donor": ""
+ },
+ "ko|q17": {
+  "type": "real",
+  "source": "hen-604467ff7ca7",
+  "donor": ""
+ },
+ "ko|q18": {
+  "type": "real",
+  "source": "hen-9cc5b1354799",
+  "donor": ""
+ },
+ "ko|q19": {
+  "type": "real",
+  "source": "hen-e8424fe92d00",
+  "donor": ""
+ },
+ "ko|q20": {
+  "type": "real",
+  "source": "hen-e4dc46eae6ac",
+  "donor": ""
+ },
+ "ko|q21": {
+  "type": "real",
+  "source": "hen-de8b2af32641",
+  "donor": ""
+ },
+ "ko|q22": {
+  "type": "real",
+  "source": "hen-26e02e82dd4f",
+  "donor": ""
+ },
+ "ko|q23": {
+  "type": "real",
+  "source": "hen-05a978a64fd9",
+  "donor": ""
+ },
+ "ko|q24": {
+  "type": "no_request",
+  "source": "hen-604467ff7ca7",
+  "donor": "ctl-invoice"
+ },
+ "ko|q25": {
+  "type": "real",
+  "source": "hen-5cb04754246d",
+  "donor": ""
+ },
+ "ko|q26": {
+  "type": "real",
+  "source": "hen-cbea2b4d0f7d",
+  "donor": ""
+ },
+ "ko|q27": {
+  "type": "real",
+  "source": "hen-284d62e24070",
+  "donor": ""
+ },
+ "ko|q28": {
+  "type": "real",
+  "source": "hen-9e2a97a41940",
+  "donor": ""
+ },
+ "bn|q01": {
+  "type": "real",
+  "source": "hen-e8424fe92d00",
+  "donor": ""
+ },
+ "bn|q02": {
+  "type": "real",
+  "source": "hen-28e6be5815f6",
+  "donor": ""
+ },
+ "bn|q03": {
+  "type": "real",
+  "source": "hen-26e02e82dd4f",
+  "donor": ""
+ },
+ "bn|q04": {
+  "type": "real",
+  "source": "hen-de8b2af32641",
+  "donor": ""
+ },
+ "bn|q05": {
+  "type": "real",
+  "source": "hen-0e996bb5b53c",
+  "donor": ""
+ },
+ "bn|q06": {
+  "type": "real",
+  "source": "hen-6dfc35365c39",
+  "donor": ""
+ },
+ "bn|q07": {
+  "type": "real",
+  "source": "hen-41430f3f92c5",
+  "donor": ""
+ },
+ "bn|q08": {
+  "type": "real",
+  "source": "hen-99749b7b76c3",
+  "donor": ""
+ },
+ "bn|q09": {
+  "type": "real",
+  "source": "hen-873cb6198eb3",
+  "donor": ""
+ },
+ "bn|q10": {
+  "type": "wrong_request",
+  "source": "hen-9cc5b1354799",
+  "donor": "hen-e8424fe92d00"
+ },
+ "bn|q11": {
+  "type": "real",
+  "source": "hen-baa57ea80508",
+  "donor": ""
+ },
+ "bn|q12": {
+  "type": "no_request",
+  "source": "hen-26e02e82dd4f",
+  "donor": "ctl-invoice"
+ },
+ "bn|q13": {
+  "type": "real",
+  "source": "hen-9e2a97a41940",
+  "donor": ""
+ },
+ "bn|q14": {
+  "type": "real",
+  "source": "hen-39c50e1dcdf9",
+  "donor": ""
+ },
+ "bn|q15": {
+  "type": "real",
+  "source": "hen-b495d39e03e6",
+  "donor": ""
+ },
+ "bn|q16": {
+  "type": "real",
+  "source": "hen-9cc5b1354799",
+  "donor": ""
+ },
+ "bn|q17": {
+  "type": "real",
+  "source": "hen-cbea2b4d0f7d",
+  "donor": ""
+ },
+ "bn|q18": {
+  "type": "real",
+  "source": "hen-bfcc10b92525",
+  "donor": ""
+ },
+ "bn|q19": {
+  "type": "added_content",
+  "source": "hen-61e9844dcdf5",
+  "donor": "ctl-parcel"
+ },
+ "bn|q20": {
+  "type": "real",
+  "source": "hen-604467ff7ca7",
+  "donor": ""
+ },
+ "bn|q21": {
+  "type": "real",
+  "source": "hen-05a978a64fd9",
+  "donor": ""
+ },
+ "bn|q22": {
+  "type": "real",
+  "source": "hen-61e9844dcdf5",
+  "donor": ""
+ },
+ "bn|q23": {
+  "type": "real",
+  "source": "hen-8d5f3ff8c225",
+  "donor": ""
+ },
+ "bn|q24": {
+  "type": "real",
+  "source": "hen-5cb04754246d",
+  "donor": ""
+ },
+ "bn|q25": {
+  "type": "real",
+  "source": "hen-e4dc46eae6ac",
+  "donor": ""
+ },
+ "bn|q26": {
+  "type": "real",
+  "source": "hen-db70f76163fa",
+  "donor": ""
+ },
+ "bn|q27": {
+  "type": "real",
+  "source": "hen-284d62e24070",
+  "donor": ""
+ },
+ "bn|q28": {
+  "type": "untranslated",
+  "source": "hen-873cb6198eb3",
+  "donor": ""
+ }
+}

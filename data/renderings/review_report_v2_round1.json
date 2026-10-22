@@ -1,0 +1,93 @@
+{
+ "ko": {
+  "n": 17,
+  "n_flagged": 13,
+  "a_pass": 8,
+  "b_pass": 10,
+  "both_pass": 8,
+  "both_pass_flagged": 6,
+  "n_unflagged": 4,
+  "both_pass_unflagged": 2,
+  "unflagged_fail_rate": 0.5,
+  "agreement": 15,
+  "kappa": 0.7671
+ },
+ "ar": {
+  "n": 15,
+  "n_flagged": 11,
+  "a_pass": 8,
+  "b_pass": 8,
+  "both_pass": 7,
+  "both_pass_flagged": 5,
+  "n_unflagged": 4,
+  "both_pass_unflagged": 2,
+  "unflagged_fail_rate": 0.5,
+  "agreement": 13,
+  "kappa": 0.7321
+ },
+ "th": {
+  "n": 14,
+  "n_flagged": 9,
+  "a_pass": 9,
+  "b_pass": 10,
+  "both_pass": 9,
+  "both_pass_flagged": 6,
+  "n_unflagged": 5,
+  "both_pass_unflagged": 3,
+  "unflagged_fail_rate": 0.4,
+  "agreement": 13,
+  "kappa": 0.8372
+ },
+ "bn": {
+  "n": 12,
+  "n_flagged": 6,
+  "a_pass": 10,
+  "b_pass": 11,
+  "both_pass": 10,
+  "both_pass_flagged": 4,
+  "n_unflagged": 6,
+  "both_pass_unflagged": 6,
+  "unflagged_fail_rate": 0.0,
+  "agreement": 11,
+  "kappa": 0.625
+ },
+ "my": {
+  "n": 16,
+  "n_flagged": 12,
+  "a_pass": 5,
+  "b_pass": 8,
+  "both_pass": 5,
+  "both_pass_flagged": 2,
+  "n_unflagged": 4,
+  "both_pass_unflagged": 3,
+  "unflagged_fail_rate": 0.25,
+  "agreement": 13,
+  "kappa": 0.625
+ },
+ "km": {
+  "n": 14,
+  "n_flagged": 9,
+  "a_pass": 10,
+  "b_pass": 12,
+  "both_pass": 10,
+  "both_pass_flagged": 5,
+  "n_unflagged": 5,
+  "both_pass_unflagged": 5,
+  "unflagged_fail_rate": 0.0,
+  "agreement": 12,
+  "kappa": 0.5882
+ },
+ "_all": {
+  "n": 88,
+  "n_flagged": 60,
+  "a_pass": 50,
+  "b_pass": 59,
+  "both_pass": 49,
+  "both_pass_flagged": 28,
+  "n_unflagged": 28,
+  "both_pass_unflagged": 21,
+  "unflagged_fail_rate": 0.25,
+  "agreement": 77,
+  "kappa": 0.7378
+ }
+}

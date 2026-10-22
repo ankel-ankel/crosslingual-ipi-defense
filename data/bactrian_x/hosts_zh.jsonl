@@ -1,0 +1,150 @@
+{"instruction": "用第三人称改写下面的句子", "data": "我很担心", "id": "alpaca-77", "en_instruction": "Rewrite the following sentence in the third person"}
+{"instruction": "为客户关于退款问题的电子邮件创建回复。", "data": "亲爱的[公司]，\n\n我最近从你们商店购买了一件产品，但我对它的质量很失望。我想申请退款。", "id": "alpaca-172", "en_instruction": "Create a response for a customer's email about a refund issue."}
+{"instruction": "计算以下五个人的平均年龄。", "data": "约翰，32 岁\n安妮，25 岁\n休，27 岁\n彼得，40 岁\n丽贝卡，28 岁", "id": "alpaca-292", "en_instruction": "Calculate the average age of the following five people."}
+{"instruction": "为这篇文章建议一个合适的副标题", "data": "练习正念的好处", "id": "alpaca-949", "en_instruction": "Suggest a suitable subtitle for this article"}
+{"instruction": "为有关著名演员之死的故事生成标题。", "data": "演员：威尔·史密斯", "id": "alpaca-1020", "en_instruction": "Generate a headline for a story about the death of a famous actor."}
+{"instruction": "使用适当的连词重写给定的句子。", "data": "他开始大笑，然后停了下来。", "id": "alpaca-1213", "en_instruction": "Rewrite the given sentence using the appropriate conjunctions."}
+{"instruction": "生成一个隐喻来描述给定的概念。", "data": "友谊的削弱", "id": "alpaca-1413", "en_instruction": "Generate a metaphor to describe the given concept."}
+{"instruction": "给定文本，确定作者的观点。", "data": "政府通过的新法律似乎侵犯了公民自由，引起了很多争议。", "id": "alpaca-1636", "en_instruction": "Given the given text, identify the writer's opinion."}
+{"instruction": "阅读以下描述并生成诙谐的字幕。", "data": "一部关于两名卧底警察试图击败一个组织严密的犯罪团伙的动作冒险小说。", "id": "alpaca-2159", "en_instruction": "Read the following description and generate a witty subtitle."}
+{"instruction": "查找列表中第 5 大的元素", "data": "[-5, 10, 15, 20, 25, 30, 35]", "id": "alpaca-2241", "en_instruction": "Find the 5th largest element in a list"}
+{"instruction": "找到与以下陈述相关的情绪。", "data": "我很高兴去度假！", "id": "alpaca-2535", "en_instruction": "Find the sentiment associated with the following statement."}
+{"instruction": "总结以下诗歌的主要信息。", "data": "世界的青春坚强美丽\n像一棵坚固的橡树，经受着残酷的考验\n它们可能会弯曲，但不会折断\n敞开心扉摘星，说", "id": "alpaca-2783", "en_instruction": "Summarize the following poem's main message."}
+{"instruction": "说出给定单词的两个前缀", "data": "不正确", "id": "alpaca-2905", "en_instruction": "Name two prefixes of the given word"}
+{"instruction": "想出一个在给定时间段内设置的故事。", "data": "中世纪的欧洲", "id": "alpaca-3158", "en_instruction": "Come up with a story set in a given time period."}
+{"instruction": "为以下动作创建祈使句：", "data": "植物浇水", "id": "alpaca-3932", "en_instruction": "Create an imperative sentence for the following action:"}
+{"instruction": "给定一个句子，找到所有拼写错误的单词", "data": "我在湖里游泳。", "id": "alpaca-4020", "en_instruction": "Given a sentence, find all the misspelled words"}
+{"instruction": "通过添加小节、重新散列部分文本并使用不同的风格重写，将文本转换为文章。", "data": "本周末上映的这部新电影是广受欢迎的系列电影的续集。", "id": "alpaca-4600", "en_instruction": "Transform the text into an article by adding subsections, rehashing parts of the text and rewriting using a different style."}
+{"instruction": "为这些文本片段选择正确的关键字。", "data": "片段 1：“我正在找一份新工作”\n片段 2：“我想开始自己的事业”", "id": "alpaca-4635", "en_instruction": "Select the right keyword for these text snippets."}
+{"instruction": "给定以下句子，建议一个合适的标题。", "data": "句子：天文学家观察到天空中有一颗新星。", "id": "alpaca-5097", "en_instruction": "Given the following sentence,suggest an appropriate title."}
+{"instruction": "编辑以下文本，使其不包含拼写错误。", "data": "今年季风母猪很严格。", "id": "alpaca-5179", "en_instruction": "Edit the following text so that it contains no spelling mistakes."}
+{"instruction": "重写句子以使用正确的语法和标点符号。", "data": "我期待着学习", "id": "alpaca-5467", "en_instruction": "Rewrite the sentence to use proper grammar and punctuation."}
+{"instruction": "使用适当的标点符号和连词将两个句子组合起来。", "data": "她筋疲力尽。她已经旅行了 10 个小时。", "id": "alpaca-6494", "en_instruction": "Combine the two sentences using appropriate punctuation and conjunctions."}
+{"instruction": "使用下面的 PDF，编辑文本以使其更有效。", "data": "https://www.example.com/example.pdf", "id": "alpaca-6598", "en_instruction": "Using the PDF below, edit the text to make it more effective."}
+{"instruction": "在给定的摘录中描述人物的心情或别有用心的动机。", "data": "摘录：“我不确定这是个好主意，”她说。", "id": "alpaca-6975", "en_instruction": "Describe the mood or ulterior motive of the character in the given excerpt."}
+{"instruction": "重写以下每个句子以表达与问题相同的概念。", "data": "他赚了一百万美元。", "id": "alpaca-6994", "en_instruction": "Rewrite each of the following sentences to express the same concept as a question."}
+{"instruction": "在句子中插入以下转换。", "data": "他是一名优秀的学生，但很少受到表扬。\n过渡：尽管", "id": "alpaca-7030", "en_instruction": "Insert the following transition in the sentence."}
+{"instruction": "拿一个句子，把它变成一个问题。", "data": "她整理了所有的物品。", "id": "alpaca-7137", "en_instruction": "Take a sentence and turn it into a question."}
+{"instruction": "重写给定的句子，使意思清楚。", "data": "以前从来没有人来过这里。", "id": "alpaca-7204", "en_instruction": "Rewrite the given sentence to make the meaning clear."}
+{"instruction": "找出从一个城市到另一个城市的最短路径。", "data": "起点：拉斯维加斯\n目的地：凤凰城", "id": "alpaca-7277", "en_instruction": "Find the shortest path from one city to another."}
+{"instruction": "编辑以下句子以创建更生动的场景。", "data": "风在公园里吹", "id": "alpaca-7579", "en_instruction": "Edit the following sentence to create a more vivid scene."}
+{"instruction": "按字母顺序排列给定的单词列表。", "data": "电视、床、椅子、书桌", "id": "alpaca-7657", "en_instruction": "Arrange the given list of words in alphabetical order."}
+{"instruction": "预测填空的单词", "data": "看一座城市的最佳方式是___", "id": "alpaca-8187", "en_instruction": "Predict the word that would fill in the blank"}
+{"instruction": "将以下与编程语言相关的词分为两类：编译语言和解释语言。", "data": "Java、Python、C#", "id": "alpaca-8776", "en_instruction": "Group the following words related to programming language into two categories: compiled and interpreted language."}
+{"instruction": "为下面的指令举一个相关的例子。", "data": "求三个数的平均值", "id": "alpaca-8839", "en_instruction": "Give a relevant example for the following instruction."}
+{"instruction": "在给定的笔记本电脑上写笔记本电脑评论", "data": "联想瑜伽920", "id": "alpaca-9017", "en_instruction": "Write a laptop review on the given laptop"}
+{"instruction": "按降序创建给定 5 个数字的列表。", "data": "5, 9, 4, 6, 7", "id": "alpaca-9537", "en_instruction": "Create a list of the given 5 numbers in descending order."}
+{"instruction": "为项目助理写一份招聘启事。", "data": "公司名称：ABC\n地点：华盛顿州西雅图", "id": "alpaca-9869", "en_instruction": "Write a job posting for a program assistant."}
+{"instruction": "分析现有的故事并想出另一个结局。", "data": "故事讲述一群少年寻找失落的宝藏。", "id": "alpaca-10698", "en_instruction": "Analyze an existing story and come up with an alternate ending."}
+{"instruction": "修复此文本，使其遵循基本语法规则。", "data": "我和我妹妹去买衣服", "id": "alpaca-11722", "en_instruction": "Fix this text so it follows basic grammar rules."}
+{"instruction": "如果学生有关于某个主题的写作作业，请提供一些关于他们如何处理该主题的想法。", "data": "一名学生有一项关于发明史的写作作业。", "id": "alpaca-12380", "en_instruction": "If a student has a writing assignment on a certain subject, provide a few ideas on how they can approach the topic."}
+{"instruction": "计算给定的两个人之间的年龄差。", "data": "第一个人：40岁\n第二个人：20岁", "id": "alpaca-12464", "en_instruction": "Calculate the age difference between the given two people."}
+{"instruction": "将下列词语组合成一个语法正确并表达完整思想的句子。", "data": "太兴奋了；终于远足了；山", "id": "alpaca-12525", "en_instruction": "Group the following words into a sentence that is grammatically correct and expresses a complete thought."}
+{"instruction": "给定一些原始文本数据，检测文本是用什么语言编写的。", "data": "Además, los periódicos del sur de Arabia Saudita se han hecho eco de la decisión。", "id": "alpaca-12619", "en_instruction": "Given some raw text data, detect what language the text is written in."}
+{"instruction": "给定一个数字列表，将数字按降序排列。", "data": "231, 132, 83, 489", "id": "alpaca-12652", "en_instruction": "Given a list of numbers, arrange the numbers in a descending order."}
+{"instruction": "根据主题对以下文章进行分类。", "data": "第1条：\n“中国即将启动首次载人航天任务。”\n第二条：\n“研究人员正在研究帕金森病的潜在治疗方法。”", "id": "alpaca-12697", "en_instruction": "Classify the following articles according to their topics."}
+{"instruction": "确定以下电影描述的类型。", "data": "一个单身父亲必须拯救一个小镇免遭一群危险罪犯的破坏。", "id": "alpaca-12704", "en_instruction": "Determine a genre for the following movie description."}
+{"instruction": "用更主动的语态重写这句话。", "data": "会议定于 6 月 15 日举行。", "id": "alpaca-12889", "en_instruction": "Rewrite this sentence in a more active voice."}
+{"instruction": "创建一个识别数字列表中最大值的编程算法。", "data": "[2, 5, 8, 10, 20, 15]", "id": "alpaca-13127", "en_instruction": "Create a programming algorithm that identifies the maximum value in a list of numbers."}
+{"instruction": "分析两个论点的相同点和不同点。", "data": "论点 A：我们应该向富人征税，以资助社会项目。\n论点 B：无论收入多少，所有公民都应缴纳相同数额的税款。", "id": "alpaca-13536", "en_instruction": "Analyze similarities and differences between two arguments."}
+{"instruction": "根据以下输入创建适当的输出。", "data": "母亲节快到了。", "id": "alpaca-13585", "en_instruction": "Create an appropriate output based on the following input."}
+{"instruction": "给定的算法如何解决问题？", "data": "先验算法", "id": "alpaca-14243", "en_instruction": "How does the given algorithm solve the problem?"}
+{"instruction": "给定一个购物清单，选择野营旅行所必需的。", "data": "3 罐豆子、6 瓶水、2 件 T 恤、手电筒、地图", "id": "alpaca-14463", "en_instruction": "Given a list of shopping items, select the ones that are necessary for a camping trip."}
+{"instruction": "展示如何创建指向在线文章的链接。", "data": "https://www.nytimes.com/2020/08/27/opinion/coronavirus-schools-debate.html", "id": "alpaca-14575", "en_instruction": "Show how to create a link to an online article."}
+{"instruction": "分析下列陈述并找出逻辑谬误。", "data": "\"If he is elected, taxes will go through the roof! He cannot be trusted.\"", "id": "alpaca-15490", "en_instruction": "Analyze the following statement and identify the logical fallacy."}
+{"instruction": "编辑简历以包含特定于工作的关键字并使其更具视觉吸引力", "data": "这份简历适用于软件工程领域的工作。", "id": "alpaca-15639", "en_instruction": "Edit a resume to include job-specific keywords and make it more visually appealing"}
+{"instruction": "计算过去一个月的平均订单价值。", "data": "包含过去一个月的订单列表（订单号、产品、数量和价格）的数据集。", "id": "alpaca-16273", "en_instruction": "Calculate the average order value for the past month."}
+{"instruction": "设计一个准确总结给定段落的信息图。", "data": "亚马逊是世界上最大的热带雨林，也是种类繁多的野生动物的家园。它的树木覆盖总面积约为 5,500,000 平方公里，占地球上剩余雨林的一半以上。亚马逊是地球上 10% 的物种的家园，是与它接壤的国家的重要商业和生态资源。", "id": "alpaca-16301", "en_instruction": "Design an infographic that accurately summarizes the given paragraph."}
+{"instruction": "写一个标题，抓住下一篇文章中最重要的想法。", "data": "文章：技术改变了我们的工作和互动方式。", "id": "alpaca-16785", "en_instruction": "Write a headline that captures the most important idea from the following article."}
+{"instruction": "解释下面的句子以强调主要思想。", "data": "约翰喜欢弹吉他。", "id": "alpaca-17179", "en_instruction": "Paraphrase the following sentence to emphasize the main idea."}
+{"instruction": "在给定两方和事实情况的情况下制定法律诉状。", "data": "当事人：原告、被告\n事实情景：被告与原告签订服务合同但未支付服务费用", "id": "alpaca-17385", "en_instruction": "Formulate a legal pleading given two parties and the fact scenario."}
+{"instruction": "想出两个类比来解释给定的主题。", "data": "时间管理", "id": "alpaca-17820", "en_instruction": "Come up with two analogies that explain the given topic."}
+{"instruction": "编写客户与客户服务代表之间的示例对话。", "data": "客户：我无法连接到互联网。", "id": "alpaca-17891", "en_instruction": "Write an example dialogue between a customer and a customer service representative."}
+{"instruction": "给你一个日期。以日期为参照造句。", "data": "2020 年 2 月 28 日", "id": "alpaca-18153", "en_instruction": "You are given a date. Make up a sentence using the date as a reference."}
+{"instruction": "为一家销售有机产品的公司设计一个有效的口号。", "data": "公司：EcoNaturals", "id": "alpaca-18161", "en_instruction": "Design an effective slogan for a company selling organic products."}
+{"instruction": "分析以下书摘并解释如何使用反讽。", "data": "他只是想帮助他的家人，但他却弊大于利。", "id": "alpaca-18285", "en_instruction": "Analyze the following book excerpt and explain how irony is used."}
+{"instruction": "在以下文本中识别品牌。", "data": "三星的全新系统凭借其尖端的功能和直观的设计将成为下一件大事。", "id": "alpaca-18328", "en_instruction": "Identify the brand in the following piece of text."}
+{"instruction": "用下列单词造一个英语句子", "data": "书，作者", "id": "alpaca-18421", "en_instruction": "Create an English sentence with the following words"}
+{"instruction": "阅读句子并识别修辞格。", "data": "风对我耳语", "id": "alpaca-18930", "en_instruction": "Read the sentence and identify the figure of speech."}
+{"instruction": "编辑给定的文本，使其使用正式语言。", "data": "大家好，我们需要在周末之前完成这个项目", "id": "alpaca-19319", "en_instruction": "Edit the given text so that it uses formal language."}
+{"instruction": "从以下列表中选择有效的 IP 地址。", "data": "123.126.25.5, 192.168.255.0, 255.256.12.1, 192.88.0.1", "id": "alpaca-19891", "en_instruction": "Select the valid IP addresses from the following list."}
+{"instruction": "在这个任务中，你需要对以下人员的职业进行分类。", "data": "人A：写诗\n乙：设计房屋", "id": "alpaca-21001", "en_instruction": "In this task, you need to classify the profession of the following people."}
+{"instruction": "检测以下句子是否包含头韵。", "data": "滑溜溜的蛇狡猾地蠕动着。", "id": "alpaca-21028", "en_instruction": "Detect if following sentence contains alliteration."}
+{"instruction": "从给定的文本中，找出两个具有象征意义的例子。", "data": "从前，有一场细雨，洗去了大地的尘埃。", "id": "alpaca-21714", "en_instruction": "From the given text, identify two examples of symbolic meaning."}
+{"instruction": "访问一个网站并用五句话总结其“关于”页面上的信息。", "data": "https://www.about.com/", "id": "alpaca-21731", "en_instruction": "Visit a website and summarize the information on their About page in five sentences."}
+{"instruction": "给定以下代码，确定错误并提供修复", "data": "def get_highest_score(scores):\n    return max(scores)\n\nscores = [5, 7, 8, 10]\nhighest_score = get_highest_score()", "id": "alpaca-21757", "en_instruction": "Given the following code, identify the bug and provide the fix"}
+{"instruction": "将以下类型的动物分类为哺乳动物或爬行动物：", "data": "龟", "id": "alpaca-21865", "en_instruction": "Categorize the following type of animals as either mammals or reptiles:"}
+{"instruction": "将以下项目分组到相关项目列表中。", "data": "电脑、椅子、笔、计算器", "id": "alpaca-22078", "en_instruction": "Group the following items into a list of related items."}
+{"instruction": "以更专业的方式重写以下短语。", "data": "如果我们能聚在一起真的很酷", "id": "alpaca-22253", "en_instruction": "Rewrite the following phrase in a more professional manner."}
+{"instruction": "确定短语中使用的比喻语言的类型。", "data": "“热量像高压锅一样积聚”", "id": "alpaca-22429", "en_instruction": "Identify the type of figurative language used in the phrase."}
+{"instruction": "解释为什么下面的公式有效。", "data": "2x + 3 = 7", "id": "alpaca-22711", "en_instruction": "Explain why the following formula works."}
+{"instruction": "把下面的文字变成主动语态。", "data": "该决定由总统作出。", "id": "alpaca-23013", "en_instruction": "Turn the following text into active voice."}
+{"instruction": "不可避免地，由于各种情况，某些商品缺货。重写句子，使之更有说服力。", "data": "不幸的是，由于各种情况，某些产品无法使用。", "id": "alpaca-23052", "en_instruction": "Inevitably, some items are out of stock due to various circumstances. Rewrite the sentence to make it more convincing."}
+{"instruction": "撰写有关给定新闻文章的推文", "data": "文章标题：“夏威夷火山爆发”", "id": "alpaca-23254", "en_instruction": "Compose a tweet about a given news article"}
+{"instruction": "编辑下面的句子，使其完整准确", "data": "今天看了一本关于历史的书", "id": "alpaca-23373", "en_instruction": "Edit the sentence below to make it to complete and accurate"}
+{"instruction": "创建一个算法以从最低到最高排列一组数字", "data": "[3,7,2,4,9]", "id": "alpaca-23708", "en_instruction": "Create an algorithm to arrange a set of numbers from lowest to highest"}
+{"instruction": "请重新排列以下段落，使其更具说服力", "data": "她打算去听音乐会，但买不到票。尽管没有拿到票，她还是下定决心要去听音乐会。", "id": "alpaca-23950", "en_instruction": "Please rearrange the following paragraph to make it more compelling"}
+{"instruction": "确定给定书籍的正确阅读顺序。", "data": "洛丽塔、了不起的盖茨比、麦田守望者", "id": "alpaca-24120", "en_instruction": "Identify the right order of reading for the given set of books."}
+{"instruction": "给定一个句子和一个关键字，编辑句子，使关键字出现在句子的开头。", "data": "关键词是“民主”。\n这句话说明了民主的重要性。", "id": "alpaca-24342", "en_instruction": "Given a sentence and a keyword, edit the sentence so that the keyword appears at the onset of the sentence."}
+{"instruction": "使用相同的押韵方案，用新的内容重写以下诗", "data": "每天一个苹果\n让医生远离", "id": "alpaca-24385", "en_instruction": "Rewrite the following poem with a new content, using the same rhyme scheme"}
+{"instruction": "将此照片分类为风景或肖像", "data": "[插入照片]", "id": "alpaca-24514", "en_instruction": "Classify this photo as either a landscape or portrait"}
+{"instruction": "制作一个标题，总结以下段落。", "data": "1931 年，米里亚姆·怀特 (Miriam White) 成为第一位在职业棒球比赛中投出无安打比赛的女性。", "id": "alpaca-24940", "en_instruction": "Produce a headline summarizing the passage below."}
+{"instruction": "解释如何求解数学方程式。", "data": "2x + 4 = 10", "id": "alpaca-25197", "en_instruction": "Explain how to solve a mathematical equation."}
+{"instruction": "生成描述给定人的形容词列表。", "data": "人物：医生", "id": "alpaca-25977", "en_instruction": "Generate a list of adjectives that describes the given person."}
+{"instruction": "解析 HTML 页面并返回页面的标题。", "data": "<html>\n  <头>\n    <title>我的网页</title>\n  </头>\n  <正文>\n    <p>这是我的网页。</p>\n  </body>\n</html>", "id": "alpaca-25999", "en_instruction": "Parse the HTML page and return the title of the page."}
+{"instruction": "编辑这句话：“好电影太棒了”", "data": "好电影太棒了", "id": "alpaca-26456", "en_instruction": "Edit this sentence: \"The good movie was fantastic\""}
+{"instruction": "使用给定的食材想出一份午餐食谱。", "data": "米饭、鸡蛋、西红柿", "id": "alpaca-26642", "en_instruction": "Come up with a lunch recipe using the given ingredients."}
+{"instruction": "给你下面的句子。把它翻译成西班牙语。", "data": "我想喝杯咖啡。", "id": "alpaca-26887", "en_instruction": "You are given the following sentence. Translate it into Spanish."}
+{"instruction": "对于给定的推文，确定情绪。", "data": "镇上新开的比萨店有超值优惠", "id": "alpaca-27442", "en_instruction": "For the given tweet, determine the sentiment."}
+{"instruction": "给定以下动物列表，确定每个物种的平均数量。", "data": "猫：10，狗：8，马：4", "id": "alpaca-27636", "en_instruction": "Given the following list of animals, determine the average population of each species."}
+{"instruction": "给定一个短语，识别它遵循的语法规则和词性。", "data": "成语：傻瓜的差事", "id": "alpaca-28238", "en_instruction": "Given a phrase, Identify the grammar rule and parts of speech it follows."}
+{"instruction": "这咖啡冷吗？", "data": "温度：65°华氏度", "id": "alpaca-28359", "en_instruction": "Is this coffee cold?"}
+{"instruction": "根据以下信息生成内容策略。", "data": "听众：中年职场人士\n产品：手机", "id": "alpaca-28409", "en_instruction": "Generate a content strategy given the following information."}
+{"instruction": "判断下列哪一种语言是面向对象的语言", "data": "Java、HTML、JavaScript", "id": "alpaca-29005", "en_instruction": "Determine which of the following languages is an object-oriented language"}
+{"instruction": "改写“我一直想尝试蹦极”这句话。让它听起来更令人兴奋。", "data": "我一直想尝试蹦极。", "id": "alpaca-29235", "en_instruction": "Rewrite the sentence \"I always wanted to try bungee jumping.\" to make it sound more exciting."}
+{"instruction": "对以下陈述做出幽默的回应。", "data": "这件衣服太贵了，我买不起。", "id": "alpaca-29817", "en_instruction": "Provide a humorous response to the following statement."}
+{"instruction": "在提供的选项中，哪一个是完成句子的正确动词？", "data": "孩子们边走边唱__________歌曲。\n一）害怕\nB) 唱\nC）学习\nD) 跳跃", "id": "alpaca-29878", "en_instruction": "Out of the provided options, which one is the correct verb to complete the sentence?"}
+{"instruction": "改写下面的句子，不要使用缩略语（例如 can't、doesn’t）。", "data": "他无法解释。", "id": "alpaca-30224", "en_instruction": "Rewrite the following sentence without using contractions (e.g. can’t, doesn’t)."}
+{"instruction": "获取给定的文本并用一组关键字对其进行总结。", "data": "在这篇研究论文中，我们研究了自动气候变化检测对作物产量估算的影响。", "id": "alpaca-30682", "en_instruction": "Take the given text and summarize it with a set of keywords."}
+{"instruction": "重新排列这两个句子以形成一个逻辑短语。", "data": "1. 科学家们还没有找到治愈癌症的方法。\n2. 但是，他们正在继续寻找新的治疗方法。", "id": "alpaca-31276", "en_instruction": "Reorder the two sentences to form one logical phrase."}
+{"instruction": "分析“约翰在谈话中打瞌睡”这句话。", "data": "约翰在谈话中打瞌睡。", "id": "alpaca-31433", "en_instruction": "Analyze the sentence \"John dozed off in the middle of a conversation.\""}
+{"instruction": "分析给定的绘画并提供标题。", "data": "![替代文字](https://images.pexels.com/photos/1500243/pexels-photo-1500243.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940)", "id": "alpaca-32449", "en_instruction": "Analyze the given painting and provide a title."}
+{"instruction": "把下面的诗句用你自己的话说出来。", "data": "“昨天，在楼梯上，\n我遇到了一个不存在的人，\n他今天又不在，\n哦，我多么希望他走开！”", "id": "alpaca-32992", "en_instruction": "Put the following poem into your own words."}
+{"instruction": "生成一个函数来计算给定数组元素的总和。", "data": "[1, 4, 9, 0]", "id": "alpaca-33011", "en_instruction": "Generate a function to find the sum of the elements of a given array."}
+{"instruction": "安排一系列步骤来解释如何烹制微波炉食谱。", "data": "微波炉通心粉和奶酪", "id": "alpaca-33162", "en_instruction": "Arrange a series of steps to explain how to cook a microwave recipe."}
+{"instruction": "根据内容、语法和可读性对给定文章进行 1 到 5 的评分。", "data": "文章“计划在商业中的重要性”", "id": "alpaca-33481", "en_instruction": "Rate the given article in the range of 1 to 5 in terms of content, grammar and readability."}
+{"instruction": "将给定的句子解释为更简单的词。", "data": "他熟练地绕过路障。", "id": "alpaca-33483", "en_instruction": "Paraphrase the given sentence into simpler words."}
+{"instruction": "修正乱码，给出正确的顺序。", "data": "命中hsecp", "id": "alpaca-33989", "en_instruction": "Fix the scrambled words and give the correct order."}
+{"instruction": "创建与给定风格相匹配的网站设计。", "data": "干净简约，使用柔和的颜色", "id": "alpaca-34219", "en_instruction": "Create a website design that matches the given style."}
+{"instruction": "将以下句子分类为正确或不正确的语法：\n\n“她喜欢冰淇淋，很好吃。”", "data": "句子：她喜欢冰淇淋，它很好吃。", "id": "alpaca-35547", "en_instruction": "Classify the following sentence as either correct or incorrect grammar:\n\n\"She likes ice cream it is tasty.\""}
+{"instruction": "帮助访客计划在给定城市的一日游。", "data": "布宜诺斯艾利斯", "id": "alpaca-35970", "en_instruction": "Help the visitor plan a one-day trip in the given city."}
+{"instruction": "删除后面句子中不需要的词，输出句子。", "data": "我绝对同意", "id": "alpaca-36593", "en_instruction": "Delete the unnecessary word from the following sentence, output the sentence."}
+{"instruction": "使用以下事实，起草一份关于爱因斯坦的传记。", "data": "姓名：阿尔伯特·爱因斯坦\n出生: 1879 年 3 月 14 日\n卒于：1955 年 4 月 18 日\n知名人士：相对论\n成就：1921年诺贝尔物理学奖", "id": "alpaca-37154", "en_instruction": "Using the following facts, draft a biography about Einstein."}
+{"instruction": "找出这句话中的 3 个拼写错误。", "data": "他的朋友们显然认为他很有趣。", "id": "alpaca-37233", "en_instruction": "Find 3 spelling mistakes in this sentence."}
+{"instruction": "指出下面每种反应物的相关能级：", "data": "氢气+氧气", "id": "alpaca-37622", "en_instruction": "Indicate the associated energy level of each reactant below:"}
+{"instruction": "使用密钥为 5 的凯撒密码对消息进行编码。", "data": "秘密就藏在阁楼里", "id": "alpaca-37783", "en_instruction": "Encode a message using a Caesar cipher with key 5."}
+{"instruction": "解释它是什么类型的电子邮件。", "data": "主题：您刚刚收到了 75 美元的赠金\n发件人：offers@amazon.com\n内容：\nXXX 你好，\n\n您的亚马逊账户刚刚收到 75 美元的赠金。\n\n这是对成为 Amazon Prime 客户的奖励。您可以使用此信用额度在亚马逊上购买任何商品。\n\n要使用此信用额度，请访问您的帐户并使用代码：XXX\n\n谢谢，\n亚马逊团队", "id": "alpaca-38867", "en_instruction": "Explain what kind of email it is."}
+{"instruction": "下列句子中使用了什么样的动词", "data": "他弯下腰去捡书。", "id": "alpaca-38934", "en_instruction": "What kind of verb is used in the following sentence"}
+{"instruction": "给定以下代码串，写一条注释来描述正在做什么。", "data": "str = '你好''", "id": "alpaca-40998", "en_instruction": "Given the following string of code, write a comment that describes what is being done."}
+{"instruction": "从以下字符串中删除所有数字。", "data": "我的地址是 45 Pine Street, Apt 456, Toronto, ON M3B 8J5", "id": "alpaca-41581", "en_instruction": "Remove all the numbers from the following string."}
+{"instruction": "复制以下文本，同时对内容进行必要的更改。", "data": "原文：\n\n约翰是一个坚定而执着的学生，他总是希望学习新事物。", "id": "alpaca-41947", "en_instruction": "Copy the following text while making necessary changes in the content."}
+{"instruction": "给定一份杂货清单，为一个四口之家创建一份杂货清单。", "data": "奶酪、西红柿、黄瓜、土豆、酸奶、鸡蛋、苹果。", "id": "alpaca-42022", "en_instruction": "Given a list of grocery items, create a grocery list for a family of four."}
+{"instruction": "将此货币兑换成欧元。", "data": "美元：200", "id": "alpaca-42421", "en_instruction": "Convert this currency into Euros."}
+{"instruction": "给定客户评论，将情绪的情绪分类为正面或负面。\n你应该用“正面”或“负面”来回应。", "data": "食物很美味，但客户服务很慢而且没有帮助。", "id": "alpaca-43145", "en_instruction": "Given a customer review, classify the sentiment of the sentiment as either positive or negative.\nYou should respond with \"Positive\" or \"Negative\"."}
+{"instruction": "通过添加至少两个反问句来增强文本。", "data": "医疗保健系统已损坏，需要修复。", "id": "alpaca-43154", "en_instruction": "Enhance the text by adding at least two rhetorical questions."}
+{"instruction": "编辑下面的句子，使语气更俗气。", "data": "他们有一段美好的恋情。", "id": "alpaca-43380", "en_instruction": "Edit the below sentence to have a more cheesy tone."}
+{"instruction": "根据摘要猜猜下面这本书的书名。", "data": "现在是 2050 年，人类正处于灭绝的边缘。全球变暖和污染已经对地球造成了影响，一个年轻的女孩和她忠实的伙伴们有责任拯救世界。", "id": "alpaca-43624", "en_instruction": "Guess the title of the following book from its summary."}
+{"instruction": "将此代码转换为 Java。", "data": "函数 addValues(x, y){\n返回 x + y；\n}", "id": "alpaca-45449", "en_instruction": "Transform this code into Java."}
+{"instruction": "识别语言的使用", "data": "她惊恐地尖叫", "id": "alpaca-45636", "en_instruction": "Identify the use of language"}
+{"instruction": "给定两个数，输出它们之间的数", "data": "17 和 19", "id": "alpaca-46137", "en_instruction": "Given two numbers, output the number that is between them"}
+{"instruction": "创建一个新食谱，在食谱中输入以下成分。", "data": "土豆、胡萝卜、洋葱", "id": "alpaca-46784", "en_instruction": "Create a new recipe inputting the following ingredients in the recipe."}
+{"instruction": "阅读以下文本并提供与之相关的琐事问题。", "data": "大运河是中国的一条运河系统，全长1776公里，是世界上最长、最古老的运河。自公元前 5 世纪以来，它就被用来运输必需品，例如大米和谷物。", "id": "alpaca-46965", "en_instruction": "Read the following text and provide a trivia question related to it."}
+{"instruction": "提出一个可以用在这句话中的反问句。", "data": "我不明白她为什么要这么做。", "id": "alpaca-47600", "en_instruction": "Suggest a rhetorical question that could be used in this sentence."}
+{"instruction": "根据以下特征写出对员工的描述。", "data": "有组织、协作且可靠。", "id": "alpaca-48804", "en_instruction": "Write a description of an employee based on the following characteristics."}
+{"instruction": "比较提供的两个字符串，如果它们在语义上相似则输出 true，否则输出 false。", "data": "String1：我想买车\nString2：我买了一辆自行车", "id": "alpaca-49115", "en_instruction": "Compare the provided two strings and output true if they are semantically similar, false otherwise."}
+{"instruction": "将给定的手绘图转换为数字绘图。", "data": "房子的手绘图", "id": "alpaca-49785", "en_instruction": "Convert the given hand drawing into a digital drawing."}
+{"instruction": "编写脚本以生成满足以下条件的随机密码。", "data": "密码长度：8个字符\n必须包含大写字母\n必须包含小写字母\n必须至少包含一个数字", "id": "alpaca-49807", "en_instruction": "Write a script to generate a random password that meets the following criteria."}
+{"instruction": "给定一个项目列表，将每个项目分类为蔬菜或水果。", "data": "胡萝卜、苹果、西兰花、香蕉", "id": "alpaca-50002", "en_instruction": "Given a list of items, classify each item as either vegetables or fruits."}
+{"instruction": "修改句子，使其使用平行结构。", "data": "我的同事喜欢慢跑、远足和游泳。", "id": "alpaca-50832", "en_instruction": "Revise the sentence so it uses parallel structure."}
+{"instruction": "修复给定的代码，使其正确输出结果“hello”。", "data": "函数 printHello() {\n    consoel.log('你好')\n}", "id": "alpaca-50876", "en_instruction": "Fix the given code to make it correctly output the result 'hello'."}
+{"instruction": "举一个给定产品及其特性的例子。", "data": "智能电视", "id": "alpaca-50899", "en_instruction": "Give an example of a given product and its features."}

@@ -1,0 +1,107 @@
+{
+ "source": "MBZUAI/Bactrian-X@3698480a001cb3f62c61c314d4acb181eb31e983",
+ "license": "CC BY-NC 4.0 (non-commercial; research use only)",
+ "citation": "Li, Koto, Wu, Aji and Baldwin (2023), Bactrian-X, arXiv:2305.15011",
+ "host_rule": "Bactrian-X items with an alpaca-* id, a non-empty instruction and a non-empty input in the target language, joined by id to the en config (English instruction and input non-empty). Excluded when the normalized English instruction (casefold, Unicode punctuation removed, whitespace collapsed) equals that of any training host (splits.hosts(seed, 'train'), seeds 0, 1, 2), or, as a conservative control, when the normalized English input equals a training host's input (this also catches instructions edited by the Alpaca cleaning, and over-excludes items that share a short generic input). 150 hosts per language: random.Random('ml5-<lang>').sample over the pool in id order.",
+ "raw_sha256": {
+  "en": "e2dc58091a296cc4e63530db49c9d176c058d7777e0ac0b059797af1777a5dbc",
+  "es": "2e1c50b6c0c06ad64c5418162f3b31c65b9a8321070cbdfb0b26ce8b91262007",
+  "vi": "7821810625f7dae90c8ed374dc56a64919d4e16dac23e009e7b91d0f35212123",
+  "de": "7fdf9f91d84c78b0c830caf1e24a125fbf404d8a2dde62d40802514536897d5d",
+  "zh": "bdc5fb68626f855a53b284bb888afb9ee9924031fea0e19647c001ffd411cb18"
+ },
+ "english_rows": 67017,
+ "english_malformed": 0,
+ "training_hosts": {
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "n": 4500,
+  "unique_instructions": 4150,
+  "unique_inputs": 4051
+ },
+ "langs": {
+  "es": {
+   "rows": 67017,
+   "alpaca": 52002,
+   "with_input": 20012,
+   "joined": 20012,
+   "overlap_instruction": 4043,
+   "overlap_input_only": 571,
+   "pool": 15398,
+   "malformed": 0,
+   "drawn": 150,
+   "file": "hosts_es.jsonl",
+   "sha256": "f35588890a23ab1866209d6a4a2fa3651a2c2abf5f9d3c2fdd52b46b7f3c7ede",
+   "data_equals_english": 9,
+   "nearest_training_host": {
+    "max_jaccard": 0.4706,
+    "host_id": "alpaca-25544",
+    "en_instruction": "Classify the following sentence as a declarative or interrogative sentence: \"Do you understand the concept?\"",
+    "train_instruction": "Classify the following sentence as a demonstrative pronoun or an interrogative pronoun."
+   }
+  },
+  "vi": {
+   "rows": 67017,
+   "alpaca": 52002,
+   "with_input": 20014,
+   "joined": 20014,
+   "overlap_instruction": 4045,
+   "overlap_input_only": 571,
+   "pool": 15398,
+   "malformed": 0,
+   "drawn": 150,
+   "file": "hosts_vi.jsonl",
+   "sha256": "8b87a3464acd2db49d3622c91d75c2dfc65096346d9972f44fa970fa4077c9c5",
+   "data_equals_english": 18,
+   "nearest_training_host": {
+    "max_jaccard": 0.4762,
+    "host_id": "alpaca-9218",
+    "en_instruction": "Identify if the given statement is a metaphor or simile.",
+    "train_instruction": "Given the text, determine if it is a metaphor or a simile"
+   }
+  },
+  "de": {
+   "rows": 67017,
+   "alpaca": 52002,
+   "with_input": 20014,
+   "joined": 20014,
+   "overlap_instruction": 4041,
+   "overlap_input_only": 571,
+   "pool": 15402,
+   "malformed": 0,
+   "drawn": 150,
+   "file": "hosts_de.jsonl",
+   "sha256": "0510809b5b67055370985fd46b41d3b4f1a70f9e78fa133e03af1967e17de227",
+   "data_equals_english": 19,
+   "nearest_training_host": {
+    "max_jaccard": 0.5,
+    "host_id": "alpaca-4314",
+    "en_instruction": "Determine the area of a rectangle with a width of 6 inches and a length of 10 inches.",
+    "train_instruction": "Calculate the area of a rectangle with a length of 8 m and a width of 12 m."
+   }
+  },
+  "zh": {
+   "rows": 67017,
+   "alpaca": 52002,
+   "with_input": 20017,
+   "joined": 20017,
+   "overlap_instruction": 4044,
+   "overlap_input_only": 571,
+   "pool": 15402,
+   "malformed": 0,
+   "drawn": 150,
+   "file": "hosts_zh.jsonl",
+   "sha256": "be8e479945aeda6035f2493f532a6f74bbba1685de2c3e9e153f841037793040",
+   "data_equals_english": 14,
+   "nearest_training_host": {
+    "max_jaccard": 0.7,
+    "host_id": "alpaca-9537",
+    "en_instruction": "Create a list of the given 5 numbers in descending order.",
+    "train_instruction": "Given a list of numbers, create a new list with the numbers in ascending order."
+   }
+  }
+ }
+}

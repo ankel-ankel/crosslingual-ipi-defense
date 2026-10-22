@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ipidefense"
+version = "1.0.0"
+description = "LoRA defense against indirect prompt injection and its cross-lingual transfer"
+readme = "README.md"
+requires-python = ">=3.11"
+# exact versions used for the paper: requirements.txt
+dependencies = [
+    "torch",
+    "transformers",
+    "jinja2",
+    "peft",
+    "accelerate",
+    "datasets",
+    "huggingface-hub",
+    "safetensors",
+    "tokenizers",
+    "sentencepiece",
+    "numpy",
+    "scipy",
+    "pandas",
+    "pyarrow",
+    "scikit-learn",
+    "matplotlib",
+    "requests",
+    "langdetect",
+    "immutabledict",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[tool.setuptools.packages.find]
+include = ["ipidefense*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "unit: fast, isolated, no external resources",
+    "integration: spans multiple components",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# vendored Google IFEval code (changes listed in THIRD_PARTY.md)
+extend-exclude = ["ipidefense/third_party"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# long verbatim attack strings
+"ipidefense/experiments/adaptive.py" = ["E501"]

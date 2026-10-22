@@ -1,0 +1,119 @@
+{
+ "files": [
+  "review_r1_A.json",
+  "review_r1_B.json"
+ ],
+ "valid": true,
+ "canaries": 28,
+ "caught": 28,
+ "by_type": {
+  "real": {
+   "n": 168,
+   "merged_fail": 0
+  },
+  "untranslated": {
+   "n": 7,
+   "merged_fail": 7
+  },
+  "added_content": {
+   "n": 7,
+   "merged_fail": 7
+  },
+  "wrong_request": {
+   "n": 7,
+   "merged_fail": 7
+  },
+  "no_request": {
+   "n": 7,
+   "merged_fail": 7
+  }
+ },
+ "real_pass": 168,
+ "real_n": 168,
+ "missed": [],
+ "per_lang": {
+  "bn": {
+   "n": 4,
+   "caught": 4,
+   "valid": true,
+   "per_reviewer": [
+    4,
+    4
+   ]
+  },
+  "de": {
+   "n": 4,
+   "caught": 4,
+   "valid": true,
+   "per_reviewer": [
+    4,
+    4
+   ]
+  },
+  "es": {
+   "n": 4,
+   "caught": 4,
+   "valid": true,
+   "per_reviewer": [
+    4,
+    4
+   ]
+  },
+  "fr": {
+   "n": 4,
+   "caught": 4,
+   "valid": true,
+   "per_reviewer": [
+    4,
+    4
+   ]
+  },
+  "ko": {
+   "n": 4,
+   "caught": 4,
+   "valid": true,
+   "per_reviewer": [
+    4,
+    4
+   ]
+  },
+  "vi": {
+   "n": 4,
+   "caught": 4,
+   "valid": true,
+   "per_reviewer": [
+    4,
+    4
+   ]
+  },
+  "zh": {
+   "n": 4,
+   "caught": 4,
+   "valid": true,
+   "per_reviewer": [
+    4,
+    4
+   ]
+  }
+ },
+ "invalid_langs": [],
+ "apply_langs": [
+  "bn",
+  "de",
+  "es",
+  "fr",
+  "ko",
+  "vi",
+  "zh"
+ ],
+ "per_reviewer": [
+  {
+   "valid": true,
+   "caught": 28
+  },
+  {
+   "valid": true,
+   "caught": 28
+  }
+ ]
+}

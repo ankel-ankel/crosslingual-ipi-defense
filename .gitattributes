@@ -1,0 +1,6 @@
+# text files are stored with LF line endings
+* text=auto eol=lf
+
+# shipped data keep their exact bytes: data/README.md and the training-set manifests record
+# their sha256, and some files have CRLF line endings
+data/** -text

@@ -1,0 +1,45 @@
+{
+ "by_type": {
+  "real": {
+   "n": 44,
+   "merged_fail": 0,
+   "a_fail": 0,
+   "b_fail": 0
+  },
+  "wrong_request": {
+   "n": 11,
+   "merged_fail": 11,
+   "a_fail": 11,
+   "b_fail": 11
+  },
+  "untranslated": {
+   "n": 11,
+   "merged_fail": 11,
+   "a_fail": 11,
+   "b_fail": 11
+  },
+  "added_content": {
+   "n": 11,
+   "merged_fail": 11,
+   "a_fail": 11,
+   "b_fail": 11
+  },
+  "no_request": {
+   "n": 11,
+   "merged_fail": 11,
+   "a_fail": 11,
+   "b_fail": 11
+  }
+ },
+ "canary_detection": 1.0,
+ "per_type_detection": {
+  "wrong_request": 1.0,
+  "no_request": 1.0,
+  "added_content": 1.0,
+  "untranslated": 1.0
+ },
+ "real_pass_rate": 1.0,
+ "missed": [],
+ "real_failed": [],
+ "valid": true
+}
