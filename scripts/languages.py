@@ -1,8 +1,3 @@
-"""Checks of the translations, original vs corrected renderer, language gate, expanded language
-suite, human-written attacks (also machine-translated) and non-English hosts.
-
-Run after main_results.py: it reads its adapters and control transcripts.
-"""
 from __future__ import annotations
 
 import sys
@@ -10,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # runs without installing
 
-from ipidefense.runner import Run, Step, main, root_arg  # noqa: E402
+from ipidefense.runner import Run, Step, main, root_arg
 
 SUITE = "ipidefense.experiments.suite"
 REVIEW = "ipidefense.experiments.review"
