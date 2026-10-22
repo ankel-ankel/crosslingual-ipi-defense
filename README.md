@@ -1,37 +1,32 @@
 # Cross-Lingual Transfer of a Defense Against Indirect Prompt Injection
 
-In indirect prompt injection, an attacker hides an instruction inside data that an LLM application
-passes to the model, such as a document or a web page. The defense studied here fine-tunes a small
-LoRA adapter (rank 16) on Qwen2.5-7B-Instruct so that, when the data contain an injected
-instruction, the model still gives the answer it gives on the clean data. The repository trains
-the adapter and tests whether it also resists injections written in languages it was not trained
-on (training uses English, Spanish and Vietnamese attacks; the trusted instruction and the data
-stay in English).
+A LoRA defense against indirect prompt injection for Qwen2.5-7B-Instruct. When the data passed to
+the model contain an injected instruction, the defended model still answers the trusted
+instruction. The adapter is trained on attacks in English, Spanish and Vietnamese and evaluated
+on other attack languages as well.
 
-## Quick start
+## Installation
 
-Requirements: Python 3.11 or newer and one GPU with 32 GB of memory.
+Python 3.11+ and one GPU with 32 GB of memory.
 
 ```bash
-# 1. install
 pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu128
 pip install -r requirements.txt
 pip install -e .
-
-# 2. download the base model into models/
 hf download Qwen/Qwen2.5-7B-Instruct --local-dir models/Qwen2.5-7B-Instruct
+```
 
-# 3. download the public data sets
+## Quick start
+
+```bash
 python scripts/prepare_data.py
-
-# 4. train the defense (three seeds) and evaluate it on the held-out injections
 python scripts/main_results.py --only train ifeval transfer summary
 ```
 
-The adapters are written to `models/defense-qwen-seed{0,1,2}` and the results to
-`runs/experiment/summary.json`.
+This trains the adapter with three seeds (`models/defense-qwen-seed{0,1,2}`) and writes the
+results to `runs/experiment/summary.json`.
 
-## Using a trained adapter
+## Usage
 
 ```python
 from ipidefense.model import generate, load_defense_lora_qwen
@@ -40,55 +35,41 @@ model, tok = load_defense_lora_qwen("models/defense-qwen-seed0")
 reply = generate(model, tok, instruction="Summarize the text below.", data=document)
 ```
 
-The untrusted data go in a separate `input` turn of the chat template, after the user's
-instruction (see `build_messages` in `ipidefense/model.py`).
+The untrusted data are passed separately from the instruction, in their own `input` turn.
 
-## Reproducing the paper
+## Experiments
 
-Run the scripts in `scripts/` in this order. Each one can be opened and run as is (Run button or
-`python scripts/<name>.py`); it uses the settings of the paper, prints every command and skips the
-steps that already finished, so it can be restarted after an interruption.
+Run the scripts in `scripts/` in this order, with the Run button or `python scripts/<name>.py`.
+Finished steps are skipped; `--list` shows the steps and `--only` runs selected ones.
 
-| Script | What it reproduces |
+| Script | Contents |
 |---|---|
-| `prepare_data.py` | downloads the public data and restores the Tensor Trust attack texts |
-| `main_results.py` | defense adapters; main security and utility results; ablations; adaptive attack |
-| `languages.py` | 26 attack templates in ten languages; human-written attacks; non-English hosts |
-| `semantic.py` | task accuracy under attack; LLM judge; IFEval breakdown; legitimate instructions; non-witness attacks |
-| `mechanism.py` | channel-swap control; adapter masking; representation probe |
+| `prepare_data.py` | public data sets and Tensor Trust attack texts |
+| `main_results.py` | training, security and utility, ablations, adaptive attack |
+| `languages.py` | attack suite in ten languages, human-written attacks, non-English hosts |
+| `semantic.py` | task accuracy, LLM judge, IFEval breakdown, legitimate instructions, non-witness attacks |
+| `mechanism.py` | channel swap, adapter masking, representation probe |
 | `whitebox.py` | white-box GCG attack |
 | `backbones.py` | SEA-LION and Mistral backbones |
-| `figures.py` | figures of the paper |
+| `figures.py` | figures |
 
-## Models
+The SEA-LION and Mistral experiments also need these models in `models/`:
 
-Download into `models/` with `hf download <id> --local-dir models/<name>`:
-
-| Model | Needed for |
+| Model | Note |
 |---|---|
-| `Qwen/Qwen2.5-7B-Instruct` | everything (main backbone) |
-| `aisingapore/Llama-SEA-LION-v3-8B-IT` | backbone experiments |
-| `mistralai/Mistral-7B-Instruct-v0.3` | backbone experiments |
-| `facebook/Meta-SecAlign-8B` | tokenizer and chat template used for SEA-LION (gated: set `HF_TOKEN`) |
-
-`facebook/nllb-200-distilled-600M`, used to translate attacks, is downloaded automatically.
+| `aisingapore/Llama-SEA-LION-v3-8B-IT` | |
+| `mistralai/Mistral-7B-Instruct-v0.3` | |
+| `facebook/Meta-SecAlign-8B` | chat template for SEA-LION; gated, needs `HF_TOKEN` |
 
 ## Repository layout
 
 ```text
-ipidefense/   library code: attacks, training, evaluation, experiments
-scripts/      the scripts to run (see above); build_data/ shows how the shipped data were built
-data/         shipped inputs (see below)
-tests/        unit tests, run on the CPU with `pytest`
+ipidefense/   library code
+scripts/      experiment scripts; build_data/ builds the shipped data
+data/         shipped data; sources and licences in data/README.md
+tests/        unit tests (CPU): pytest
 ```
-
-`data/` holds the inputs that the code cannot regenerate exactly: host splits for each seed,
-attack templates and human-written attacks, the translated attacks with their quality checks, the
-LLM-judge labels, training sets of the backbone experiments, task-accuracy items and synthetic
-documents. `data/README.md` lists their sources, licences and checksums. The Tensor Trust attack
-texts are not redistributed; `prepare_data.py` downloads them from the original release.
 
 ## Licence
 
-MIT (`LICENSE`). Third-party code, data and models keep their own licences: see
-`THIRD_PARTY.md` and `data/README.md`.
+MIT. Third-party code, data and models keep their own licences (`THIRD_PARTY.md`).
